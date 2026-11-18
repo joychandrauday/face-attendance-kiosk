@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-11-19
+### Changed & Upgraded
+- Streamlined primary kiosk interaction to a single, high-trust **"Verify"** button (`buttonLabel="Verify"`), eliminating multi-button ambiguity for employees.
+- Auto-smart punch toggle enabled by default (`showModeSelector` now defaults to `false`).
+- Intelligent verification messaging:
+  - **Clock In**: Displays a prominent Emerald badge `● CLOCK IN RECORDED`, welcome text `"Clock-in confirmed. Have a great shift!"`, and timestamps.
+  - **Clock Out**: Displays a prominent Amber badge `● CLOCK OUT RECORDED`, completion text `"Clock-out logged. Shift completed."`, and a dedicated Shift Duration card (`{hours}h {minutes}m` in `font-mono tabular-nums`).
+- Upgraded UI design to strict anti-slop B2B standards:
+  - Obsidian surface styling (`#080D1A`, `#0F172A`) with crisp 1px borders (`#1E293B`).
+  - Native inline SVG icons (Biometric Shield, Reticle, Checkmark, Camera, Upload) with zero external icon dependencies.
+  - Smooth biometric scan line animation during authentication.
+  - Polished `<FaceEnrollment />` component with sleek B2B file picker and angle tags.
+
 ## [1.1.0] - 2026-11-19
 ### Added
 - Multi-theme support: `theme="dark"`, `theme="light"`, and `theme="transparent"` for seamless embedding into external CRMs.

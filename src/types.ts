@@ -37,11 +37,17 @@ export interface FaceAttendanceKioskProps {
   workspace_id?: string;
   apiUrl?: string;
 
-  /** Punch mode: "AUTO" (smart auto-toggle), "IN" (clock in only), "OUT" (clock out only) */
+  /** Punch mode: "AUTO" (smart auto-toggle), "IN" (clock in only), "OUT" (clock out only). Default: "AUTO" */
   punchType?: PunchDirection;
 
-  /** Whether to show the interactive mode selector (Auto / In / Out) */
+  /** Whether to show the interactive mode selector (Auto / In / Out). Default: false */
   showModeSelector?: boolean;
+
+  /** Primary button label. Default: "Verify" */
+  buttonLabel?: string;
+
+  /** Button label when verifying. Default: "Verifying..." */
+  loadingLabel?: string;
 
   /** Visual theme preset: "dark" (default), "light", or "transparent" for seamless CRM embedding */
   theme?: KioskTheme;

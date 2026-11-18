@@ -30,6 +30,31 @@ function playVerificationChime() {
   } catch (_) {}
 }
 
+// Inject scan animation keyframes once safely
+if (typeof document !== "undefined") {
+  const styleId = "sureclock-kiosk-animations";
+  if (!document.getElementById(styleId)) {
+    const styleEl = document.createElement("style");
+    styleEl.id = styleId;
+    styleEl.innerHTML = `
+      @keyframes sureclockScanLine {
+        0% { top: 0%; opacity: 0.9; }
+        50% { top: 97%; opacity: 0.9; }
+        100% { top: 0%; opacity: 0.9; }
+      }
+      @keyframes sureclockFadeIn {
+        from { opacity: 0; transform: scale(0.97); }
+        to { opacity: 1; transform: scale(1); }
+      }
+      @keyframes sureclockPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+      }
+    `;
+    document.head.appendChild(styleEl);
+  }
+}
+
 export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
   apiKey,
   api_key,
@@ -37,7 +62,9 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
   workspace_id,
   apiUrl = "https://api.sureclock.karalasoft.com",
   punchType = "AUTO",
-  showModeSelector = true,
+  showModeSelector = false,
+  buttonLabel = "Verify",
+  loadingLabel = "Verifying...",
   theme = "dark",
   styles = {},
   hideHeader = false,
@@ -137,7 +164,6 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
           setErrorBanner(null);
         }
       } catch (err: any) {
-        console.error("Camera access error:", err);
         const msg = "Camera permission denied or camera not found.";
         setErrorBanner(msg);
         if (onError) onError(msg);
@@ -227,18 +253,28 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
 
       if (data.match && data.employee_id) {
         setLastSuccess(data);
-        const actionLabel = data.punch_type === "OUT" ? "Clock-Out" : "Clock-In";
-        setStatusMessage(`${actionLabel} verified: ${data.employee_id}`);
+
+        // Smart status display
+        const isClockOut = data.punch_type === "OUT";
+        if (isClockOut) {
+          const duration = data.session_duration_minutes != null
+            ? ` (${Math.floor(data.session_duration_minutes / 60)}h ${data.session_duration_minutes % 60}m)`
+            : "";
+          setStatusMessage(`Clock Out verified: ${data.employee_id}${duration}`);
+        } else {
+          setStatusMessage(`Clock In verified: ${data.employee_id}`);
+        }
+
         if (enableSound) playVerificationChime();
         if (onSuccess) onSuccess(data);
         if (onStatusChange) onStatusChange("SUCCESS");
 
-        // Reset for next employee
+        // Auto-dismiss after 4 seconds
         setTimeout(() => {
           setLastSuccess(null);
           setStatusMessage("");
           if (onStatusChange) onStatusChange("READY");
-        }, 3500);
+        }, 4000);
       } else {
         const msg = data.message || "Face not recognized (>90% threshold required).";
         setErrorBanner(msg);
@@ -264,7 +300,7 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
       if (!loading && !lastSuccess) {
         handleVerify();
       }
-    }, 2500);
+    }, 2800);
     return () => clearInterval(interval);
   }, [autoScan, hasCamera, loading, lastSuccess, selectedPunchType]);
 
@@ -273,17 +309,16 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
   const isTransparent = theme === "transparent";
 
   const themeTokens = {
-    bg: isTransparent ? "transparent" : isLight ? "#ffffff" : "#0f172a",
+    bg: isTransparent ? "transparent" : isLight ? "#ffffff" : "#080d1a",
+    surface: isLight ? "#f8fafc" : "#0f172a",
     border: isLight ? "#e2e8f0" : "#1e293b",
+    borderStrong: isLight ? "#cbd5e1" : "#334155",
     textPrimary: isLight ? "#0f172a" : "#f8fafc",
     textMuted: isLight ? "#64748b" : "#94a3b8",
     viewfinderBg: isLight ? "#f1f5f9" : "#020617",
-    selectorBg: isLight ? "#f8fafc" : "#080d1a",
-    shadow: isTransparent
-      ? "none"
-      : isLight
-      ? "0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04)"
-      : "0 20px 25px -5px rgba(0, 0, 0, 0.5)",
+    selectorBg: isLight ? "#f1f5f9" : "#060913",
+    accent: "#0284c7",
+    accentHover: "#0369a1",
   };
 
   return (
@@ -294,59 +329,79 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
         width: "100%",
         margin: "0 auto",
         padding: "20px",
-        borderRadius: "16px",
+        borderRadius: "14px",
         backgroundColor: themeTokens.bg,
         color: themeTokens.textPrimary,
         border: `1px solid ${themeTokens.border}`,
-        boxShadow: themeTokens.shadow,
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
         boxSizing: "border-box",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
         ...styles.container,
       }}
     >
-      {/* Kiosk Header */}
+      {/* Header Bar */}
       {!hideHeader && (
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-start",
+            alignItems: "center",
             marginBottom: "16px",
             borderBottom: `1px solid ${themeTokens.border}`,
             paddingBottom: "12px",
             ...styles.header,
           }}
         >
-          <div>
-            <h2
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {/* Biometric Shield Icon */}
+            <div
               style={{
-                fontSize: "1.15rem",
-                fontWeight: 700,
-                margin: 0,
-                color: themeTokens.textPrimary,
-                letterSpacing: "-0.02em",
+                width: "32px",
+                height: "32px",
+                borderRadius: "8px",
+                backgroundColor: isLight ? "#e0f2fe" : "#0c2847",
+                border: `1px solid ${isLight ? "#bae6fd" : "#0284c7"}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#0284c7",
               }}
             >
-              {title}
-            </h2>
-            <p style={{ fontSize: "0.8rem", color: themeTokens.textMuted, margin: "2px 0 0 0" }}>
-              {subtitle || (
-                <>
-                  Station: <code style={{ color: "#0ea5e9", fontFamily: "monospace" }}>{effectiveWorkspaceId || "Default"}</code>
-                </>
-              )}
-            </p>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                <path d="M9 12a3 3 0 1 0 6 0 3 3 0 0 0-6 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2
+                style={{
+                  fontSize: "1.05rem",
+                  fontWeight: 700,
+                  margin: 0,
+                  color: themeTokens.textPrimary,
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                {title}
+              </h2>
+              <p style={{ fontSize: "0.75rem", color: themeTokens.textMuted, margin: "2px 0 0 0" }}>
+                {subtitle || (
+                  <>
+                    Station: <span style={{ fontFamily: "monospace", color: "#0ea5e9" }}>{effectiveWorkspaceId || "Default"}</span>
+                  </>
+                )}
+              </p>
+            </div>
           </div>
 
-          {/* Digital Time Indicator */}
+          {/* Digital Time & System Indicator */}
           <div style={{ textAlign: "right" }}>
             <span
               style={{
-                fontSize: "1.1rem",
+                fontSize: "1.05rem",
                 fontWeight: 700,
                 fontFamily: "monospace",
                 fontVariantNumeric: "tabular-nums",
-                color: "#0ea5e9",
+                color: isLight ? "#0f172a" : "#38bdf8",
               }}
             >
               {currentTime}
@@ -357,9 +412,12 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
                 alignItems: "center",
                 justifyContent: "flex-end",
                 gap: "5px",
-                fontSize: "0.75rem",
+                fontSize: "0.7rem",
                 color: hasCamera ? "#10b981" : "#ef4444",
-                marginTop: "2px",
+                marginTop: "1px",
+                fontWeight: 600,
+                letterSpacing: "0.03em",
+                textTransform: "uppercase",
               }}
             >
               <span
@@ -368,23 +426,24 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
                   height: "6px",
                   borderRadius: "50%",
                   backgroundColor: hasCamera ? "#10b981" : "#ef4444",
+                  boxShadow: hasCamera ? "0 0 6px #10b981" : "none",
                 }}
               />
-              {hasCamera ? "Ready" : "No Camera"}
+              {hasCamera ? "Ready" : "Offline"}
             </div>
           </div>
         </div>
       )}
 
-      {/* Mode Selector Segmented Controls */}
+      {/* Optional Mode Selector (Hidden by default for simplicity) */}
       {showModeSelector && (
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr 1fr",
             gap: "4px",
-            padding: "4px",
-            borderRadius: "10px",
+            padding: "3px",
+            borderRadius: "8px",
             backgroundColor: themeTokens.selectorBg,
             border: `1px solid ${themeTokens.border}`,
             marginBottom: "14px",
@@ -402,10 +461,9 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
               fontSize: "0.8rem",
               fontWeight: 600,
               cursor: "pointer",
-              transition: "all 0.15s ease",
             }}
           >
-            Auto Mode
+            Auto
           </button>
           <button
             type="button"
@@ -419,7 +477,6 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
               fontSize: "0.8rem",
               fontWeight: 600,
               cursor: "pointer",
-              transition: "all 0.15s ease",
             }}
           >
             Clock In
@@ -436,7 +493,6 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
               fontSize: "0.8rem",
               fontWeight: 600,
               cursor: "pointer",
-              transition: "all 0.15s ease",
             }}
           >
             Clock Out
@@ -444,7 +500,7 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
         </div>
       )}
 
-      {/* Viewfinder Frame */}
+      {/* Viewfinder Container */}
       <div
         style={{
           position: "relative",
@@ -454,6 +510,7 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
           overflow: "hidden",
           backgroundColor: themeTokens.viewfinderBg,
           border: `1px solid ${themeTokens.border}`,
+          boxSizing: "border-box",
           ...styles.viewfinder,
         }}
       >
@@ -473,47 +530,104 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
           }}
         />
 
-        {/* Biometric Framing HUD Brackets */}
+        {/* Biometric HUD Reticle & Corner Brackets */}
         <div
           style={{
             position: "absolute",
-            top: "16%",
-            left: "16%",
-            width: "68%",
-            height: "68%",
+            top: "14%",
+            left: "14%",
+            width: "72%",
+            height: "72%",
             pointerEvents: "none",
+            boxSizing: "border-box",
             ...styles.hud,
           }}
         >
-          {/* Top-Left Bracket */}
-          <div style={{ position: "absolute", top: 0, left: 0, width: "24px", height: "24px", borderTop: "2px solid #0ea5e9", borderLeft: "2px solid #0ea5e9" }} />
-          {/* Top-Right Bracket */}
-          <div style={{ position: "absolute", top: 0, right: 0, width: "24px", height: "24px", borderTop: "2px solid #0ea5e9", borderRight: "2px solid #0ea5e9" }} />
-          {/* Bottom-Left Bracket */}
-          <div style={{ position: "absolute", bottom: 0, left: 0, width: "24px", height: "24px", borderBottom: "2px solid #0ea5e9", borderLeft: "2px solid #0ea5e9" }} />
-          {/* Bottom-Right Bracket */}
-          <div style={{ position: "absolute", bottom: 0, right: 0, width: "24px", height: "24px", borderBottom: "2px solid #0ea5e9", borderRight: "2px solid #0ea5e9" }} />
-          {/* Center Subtle Reticle */}
-          <div style={{ position: "absolute", top: "50%", left: "50%", width: "8px", height: "8px", margin: "-4px 0 0 -4px", borderRadius: "50%", backgroundColor: "rgba(14, 165, 233, 0.4)" }} />
-        </div>
-
-        {/* Scanning Sweep Indicator */}
-        {loading && (
+          {/* Top-Left */}
           <div
             style={{
               position: "absolute",
               top: 0,
               left: 0,
-              width: "100%",
-              height: "3px",
-              backgroundColor: "#0ea5e9",
-              boxShadow: "0 0 10px #0ea5e9",
-              animation: "kioskSweep 1.2s infinite ease-in-out",
+              width: "22px",
+              height: "22px",
+              borderTop: "2.5px solid #0ea5e9",
+              borderLeft: "2.5px solid #0ea5e9",
+              borderTopLeftRadius: "4px",
+            }}
+          />
+          {/* Top-Right */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              width: "22px",
+              height: "22px",
+              borderTop: "2.5px solid #0ea5e9",
+              borderRight: "2.5px solid #0ea5e9",
+              borderTopRightRadius: "4px",
+            }}
+          />
+          {/* Bottom-Left */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              width: "22px",
+              height: "22px",
+              borderBottom: "2.5px solid #0ea5e9",
+              borderLeft: "2.5px solid #0ea5e9",
+              borderBottomLeftRadius: "4px",
+            }}
+          />
+          {/* Bottom-Right */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              right: 0,
+              width: "22px",
+              height: "22px",
+              borderBottom: "2.5px solid #0ea5e9",
+              borderRight: "2.5px solid #0ea5e9",
+              borderBottomRightRadius: "4px",
+            }}
+          />
+
+          {/* Center Target Dot */}
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              width: "8px",
+              height: "8px",
+              margin: "-4px 0 0 -4px",
+              borderRadius: "50%",
+              backgroundColor: "rgba(14, 165, 233, 0.45)",
+            }}
+          />
+        </div>
+
+        {/* Live Scan Sweep Bar */}
+        {loading && (
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              height: "2px",
+              backgroundColor: "#38bdf8",
+              boxShadow: "0 0 8px #0284c7",
+              animation: "sureclockScanLine 1.4s ease-in-out infinite",
+              zIndex: 10,
             }}
           />
         )}
 
-        {/* Success Verification Card */}
+        {/* Dynamic Verification Result Overlay */}
         {lastSuccess && (
           <div
             style={{
@@ -522,18 +636,79 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
               left: 0,
               width: "100%",
               height: "100%",
-              backgroundColor: isLight ? "rgba(255, 255, 255, 0.95)" : "rgba(8, 13, 26, 0.95)",
+              backgroundColor: isLight ? "rgba(255, 255, 255, 0.96)" : "rgba(8, 13, 26, 0.96)",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               zIndex: 20,
-              padding: "20px",
+              padding: "24px",
               textAlign: "center",
               boxSizing: "border-box",
+              animation: "sureclockFadeIn 0.2s ease-out",
               ...styles.overlay,
             }}
           >
+            {/* Top Badge: Explicit Clock In vs Clock Out */}
+            {lastSuccess.punch_type === "OUT" ? (
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "4px 12px",
+                  borderRadius: "20px",
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  background: isLight ? "#fef3c7" : "rgba(217, 119, 6, 0.2)",
+                  color: isLight ? "#b45309" : "#fbbf24",
+                  border: `1px solid ${isLight ? "#fde68a" : "rgba(217, 119, 6, 0.4)"}`,
+                  marginBottom: "12px",
+                }}
+              >
+                <span
+                  style={{
+                    width: "6px",
+                    height: "6px",
+                    borderRadius: "50%",
+                    backgroundColor: "#f59e0b",
+                  }}
+                />
+                Clock Out Recorded
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "4px 12px",
+                  borderRadius: "20px",
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  background: isLight ? "#d1fae5" : "rgba(16, 185, 129, 0.2)",
+                  color: isLight ? "#047857" : "#34d399",
+                  border: `1px solid ${isLight ? "#a7f3d0" : "rgba(16, 185, 129, 0.4)"}`,
+                  marginBottom: "12px",
+                }}
+              >
+                <span
+                  style={{
+                    width: "6px",
+                    height: "6px",
+                    borderRadius: "50%",
+                    backgroundColor: "#10b981",
+                  }}
+                />
+                Clock In Recorded
+              </div>
+            )}
+
+            {/* Checkmark Icon Circle */}
             <div
               style={{
                 width: "56px",
@@ -543,71 +718,92 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "26px",
                 color: "#ffffff",
                 marginBottom: "12px",
               }}
             >
-              ✓
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
             </div>
-            <span
-              style={{
-                display: "inline-block",
-                padding: "2px 8px",
-                borderRadius: "4px",
-                fontSize: "0.75rem",
-                fontWeight: 700,
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                background: lastSuccess.punch_type === "OUT" ? "#78350f" : "#064e3b",
-                color: lastSuccess.punch_type === "OUT" ? "#fbbf24" : "#34d399",
-                marginBottom: "6px",
-              }}
-            >
-              {lastSuccess.punch_type === "OUT" ? "Clock-Out Verified" : "Clock-In Verified"}
-            </span>
+
+            {/* Employee ID */}
             <h3
               style={{
-                fontSize: "1.25rem",
+                fontSize: "1.3rem",
                 fontWeight: 700,
                 margin: "0 0 4px 0",
                 color: themeTokens.textPrimary,
+                letterSpacing: "-0.01em",
               }}
             >
               {lastSuccess.employee_id}
             </h3>
-            {lastSuccess.session_duration_minutes != null && (
-              <p
+
+            {/* Contextual message */}
+            <p
+              style={{
+                fontSize: "0.85rem",
+                color: themeTokens.textMuted,
+                margin: "0 0 10px 0",
+              }}
+            >
+              {lastSuccess.punch_type === "OUT"
+                ? "Clock-out logged. Shift completed."
+                : "Clock-in logged. Have a great shift!"}
+            </p>
+
+            {/* Shift Duration Display (for Clock Out) */}
+            {lastSuccess.punch_type === "OUT" && lastSuccess.session_duration_minutes != null && (
+              <div
                 style={{
-                  fontSize: "0.85rem",
-                  color: "#0ea5e9",
-                  margin: "4px 0",
-                  fontFamily: "monospace",
-                  fontWeight: 600,
+                  backgroundColor: isLight ? "#f1f5f9" : "#0f172a",
+                  border: `1px solid ${themeTokens.border}`,
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  marginBottom: "12px",
+                  textAlign: "center",
                 }}
               >
-                Shift Duration: {Math.floor(lastSuccess.session_duration_minutes / 60)}h{" "}
-                {lastSuccess.session_duration_minutes % 60}m
-              </p>
+                <div style={{ fontSize: "0.7rem", color: themeTokens.textMuted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Shift Duration
+                </div>
+                <div
+                  style={{
+                    fontSize: "1.2rem",
+                    fontWeight: 700,
+                    fontFamily: "monospace",
+                    fontVariantNumeric: "tabular-nums",
+                    color: "#0ea5e9",
+                  }}
+                >
+                  {Math.floor(lastSuccess.session_duration_minutes / 60)}h{" "}
+                  {lastSuccess.session_duration_minutes % 60}m
+                </div>
+              </div>
             )}
-            <span
+
+            {/* Monospace Metadata Row */}
+            <div
               style={{
+                display: "flex",
+                gap: "12px",
                 fontSize: "0.75rem",
                 color: themeTokens.textMuted,
                 fontFamily: "monospace",
-                marginTop: "4px",
+                fontVariantNumeric: "tabular-nums",
               }}
             >
-              Confidence: {(lastSuccess.confidence * 100).toFixed(1)}%
-            </span>
+              <span>CONFIDENCE: {(lastSuccess.confidence * 100).toFixed(1)}%</span>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Hidden Processing Canvas */}
+      {/* Hidden 224x224 Canvas for inference capture */}
       <canvas ref={canvasRef} style={{ display: "none" }} />
 
-      {/* Device Switcher (only shown if > 1 camera detected) */}
+      {/* Optional Camera Switcher if > 1 video device */}
       {availableDevices.length > 1 && (
         <div style={{ marginTop: "10px", display: "flex", justifyContent: "flex-end" }}>
           <select
@@ -620,6 +816,7 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
               backgroundColor: themeTokens.selectorBg,
               color: themeTokens.textMuted,
               fontSize: "0.75rem",
+              outline: "none",
             }}
           >
             {availableDevices.map((dev, idx) => (
@@ -631,8 +828,8 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
         </div>
       )}
 
-      {/* Feedback & Error Messages */}
-      {statusMessage && (
+      {/* Dynamic Status / Feedback Notification */}
+      {statusMessage && !lastSuccess && (
         <div
           style={{
             marginTop: "12px",
@@ -640,6 +837,7 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
             borderRadius: "8px",
             backgroundColor: isLight ? "#f0f9ff" : "#082f49",
             color: isLight ? "#0369a1" : "#38bdf8",
+            border: `1px solid ${isLight ? "#bae6fd" : "#0c4a6e"}`,
             fontSize: "0.8rem",
             textAlign: "center",
             fontWeight: 500,
@@ -649,6 +847,7 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
         </div>
       )}
 
+      {/* Error Alert Banner */}
       {errorBanner && (
         <div
           style={{
@@ -666,7 +865,7 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
         </div>
       )}
 
-      {/* Main Action Button */}
+      {/* Primary Action Button: "Verify" */}
       <div style={{ marginTop: "14px" }}>
         <button
           type="button"
@@ -674,32 +873,43 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
           disabled={loading || !hasCamera}
           style={{
             width: "100%",
-            padding: "12px 16px",
+            padding: "12px 18px",
             borderRadius: "8px",
-            backgroundColor: loading
-              ? "#0369a1"
-              : selectedPunchType === "OUT"
-              ? "#d97706"
-              : selectedPunchType === "IN"
-              ? "#059669"
-              : "#0284c7",
+            backgroundColor: loading || !hasCamera ? (isLight ? "#94a3b8" : "#1e293b") : themeTokens.accent,
             color: "#ffffff",
             fontWeight: 600,
             fontSize: "0.95rem",
             border: "none",
             cursor: loading || !hasCamera ? "not-allowed" : "pointer",
-            transition: "all 0.15s ease",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            transition: "background-color 0.15s ease",
             ...styles.button,
           }}
         >
-          {loading
-            ? "Authenticating Vector..."
-            : selectedPunchType === "OUT"
-            ? "Tap to Clock Out"
-            : selectedPunchType === "IN"
-            ? "Tap to Clock In"
-            : "Verify Biometric Attendance"}
+          {/* Biometric Scan SVG Icon */}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M7 3H5a2 2 0 0 0-2 2v2" />
+            <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+            <path d="M3 17v2a2 2 0 0 0 2 2h2" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          <span>{loading ? loadingLabel : buttonLabel}</span>
         </button>
+
+        <p
+          style={{
+            fontSize: "0.75rem",
+            color: themeTokens.textMuted,
+            textAlign: "center",
+            margin: "8px 0 0 0",
+          }}
+        >
+          Align your face in the frame and tap Verify
+        </p>
       </div>
     </div>
   );
