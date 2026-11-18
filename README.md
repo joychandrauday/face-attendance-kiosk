@@ -12,11 +12,11 @@ Zero-overhead, client-side drop-in React/Next.js biometric components for SureCl
 ## Installation
 
 ```bash
+# Install directly from the public GitHub repository:
+npm install joychandrauday/face-attendance-kiosk
+
+# Or via npm package registry:
 npm install @karalasoft/face-attendance-kiosk
-# or
-yarn add @karalasoft/face-attendance-kiosk
-# or
-pnpm add @karalasoft/face-attendance-kiosk
 ```
 
 ---
