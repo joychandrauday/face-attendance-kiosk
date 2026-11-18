@@ -1,11 +1,13 @@
 # @karalasoft/face-attendance-kiosk
 
-Zero-overhead, client-side drop-in React/Next.js biometric components for SureClock.
+Zero‑overhead, client‑side drop‑in React/Next.js biometric components for SureClock. The library works in any React‑based environment – plain JSX, TSX, or Next.js (including server‑components when appropriate).
+
+---
 
 ## Components Included
 
-1. **`<FaceAttendanceKiosk />`**: For showroom wall tablets / attendance check-in stations (uses Publishable Key `pk_live_...`).
-2. **`<FaceEnrollment />`**: For HR admin dashboards to capture and enroll employee face biometrics (uses Secret Key `sk_live_...`).
+1. **`<FaceAttendanceKiosk />`** – A ready‑to‑use attendance/check‑in UI.
+2. **`<FaceEnrollment />`** – A component for enrolling employee face biometrics.
 
 ---
 
@@ -15,32 +17,34 @@ Zero-overhead, client-side drop-in React/Next.js biometric components for SureCl
 # Install directly from the public GitHub repository:
 npm install joychandrauday/face-attendance-kiosk
 
-# Or via npm package registry:
+# Or via the npm package registry:
 npm install @karalasoft/face-attendance-kiosk
 ```
 
 ---
 
-## 1. Showroom Clock-In Kiosk (`<FaceAttendanceKiosk />`)
+## Usage (React / Next.js)
 
-Drop this component on any showroom tablet or public kiosk. **It is safe to use in public browsers** because it accepts a Publishable Key (`pk_live_...`) restricted strictly to 1:N verification:
+Both components are fully typed and can be used in JavaScript (`.jsx`) or TypeScript (`.tsx`) files. In Next.js, mark the file as a client component (`'use client'`).
+
+### 1. Attendance / Check‑in Component
 
 ```tsx
 'use client';
 
 import { FaceAttendanceKiosk } from '@karalasoft/face-attendance-kiosk';
 
-export default function ShowroomAttendancePage() {
+export default function AttendancePage() {
   return (
     <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#020617' }}>
       <FaceAttendanceKiosk
         api_key="pk_live_YOUR_PUBLISHABLE_KEY"
-        workspace_id="dealer_gulshan"
+        workspace_id="your_workspace_id"
         onSuccess={(result) => {
-          console.log(`Clock-in verified for ${result.employee_id} at ${result.timestamp}`);
+          console.log(`Check‑in verified for ${result.employee_id} at ${result.timestamp}`);
         }}
         onError={(err) => {
-          console.warn('Clock-in failed:', err);
+          console.warn('Check‑in failed:', err);
         }}
       />
     </main>
@@ -48,26 +52,25 @@ export default function ShowroomAttendancePage() {
 }
 ```
 
----
-
-## 2. HR Employee Enrollment (`<FaceEnrollment />`)
-
-Drop this component into your secure internal HR / Admin dashboard to register employee face biometrics:
+### 2. Employee Enrollment Component
 
 ```tsx
 'use client';
 
 import { FaceEnrollment } from '@karalasoft/face-attendance-kiosk';
 
-export default function HREnrollmentPage() {
+export default function EnrollmentPage() {
   return (
     <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#020617' }}>
       <FaceEnrollment
         api_key="sk_live_YOUR_SECRET_KEY"
-        workspace_id="dealer_gulshan"
-        employee_id="EMP_042" // Optional: if omitted, an input box is shown for HR
+        workspace_id="your_workspace_id"
+        employee_id="EMP_042" // optional – omit to let HR enter an ID
         onSuccess={(result) => {
           alert(`Employee ${result.employee_id} successfully enrolled!`);
+        }}
+        onError={(err) => {
+          console.error('Enrollment error:', err);
         }}
       />
     </main>
@@ -80,21 +83,28 @@ export default function HREnrollmentPage() {
 ## Props Reference
 
 ### `<FaceAttendanceKiosk />`
-| Prop | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `api_key` | `string` | **Required** | The publishable kiosk key (`pk_live_...`). |
-| `workspace_id` | `string` | **Required** | The isolated showroom/workspace identifier (e.g. `dealer_gulshan`). |
-| `apiUrl` | `string` | `https://api.sureclock.karalasoft.com` | Custom API endpoint for local dev (`http://localhost:3000`). |
-| `title` | `string` | `"Showroom Biometric Kiosk"` | Header title above viewfinder. |
-| `onSuccess` | `(res) => void` | `undefined` | Callback fired when match exceeds 90% threshold. |
-| `onError` | `(err) => void` | `undefined` | Callback fired on recognition failure. |
+| Prop | Type | Required | Description |
+| :--- | :--- | :---: | :--- |
+| `api_key` | `string` | **Yes** | Publishable key (`pk_live_...`). |
+| `workspace_id` | `string` | **Yes** | Identifier for the workspace where attendance is recorded. |
+| `apiUrl` | `string` | No | Custom API endpoint (default: `https://api.sureclock.karalasoft.com`). |
+| `title` | `string` | No | Header title displayed above the viewfinder. |
+| `onSuccess` | `(result) => void` | No | Called when a face match exceeds the success threshold. |
+| `onError` | `(error) => void` | No | Called on recognition failure or network error. |
 
 ### `<FaceEnrollment />`
-| Prop | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `api_key` | `string` | **Required** | The secret platform key (`sk_live_...`). |
-| `workspace_id` | `string` | **Required** | Target workspace for enrollment. |
-| `employee_id` | `string` | `undefined` | Pre-bound employee ID (if omitted, shows an input field). |
-| `apiUrl` | `string` | `https://api.sureclock.karalasoft.com` | Custom API endpoint. |
-| `onSuccess` | `(res) => void` | `undefined` | Callback fired upon successful enrollment. |
-| `onError` | `(err) => void` | `undefined` | Callback fired on failure. |
+| Prop | Type | Required | Description |
+| :--- | :--- | :---: | :--- |
+| `api_key` | `string` | **Yes** | Secret platform key (`sk_live_...`). |
+| `workspace_id` | `string` | **Yes** | Workspace where the biometric data will be stored. |
+| `employee_id` | `string` | No | Pre‑bind an employee ID; omit to let the user input it. |
+| `apiUrl` | `string` | No | Custom API endpoint (default: `https://api.sureclock.karalasoft.com`). |
+| `onSuccess` | `(result) => void` | No | Called after successful enrollment. |
+| `onError` | `(error) => void` | No | Called on enrollment failure.
+
+---
+
+## Notes
+- The components are built as ES modules (`"type": "module"` in `package.json`). Ensure your bundler supports ESM.
+- TypeScript definitions are included; you can import the types directly if needed.
+- For server‑side rendering (SSR) scenarios, only render the components on the client side (`'use client'`).
