@@ -253,5 +253,5 @@ export const FaceAttendanceKiosk = ({ apiKey, api_key, workspaceId, workspace_id
                 transition: "background-color 0.2s",
             } }, loading ? "Analyzing Biometric Vector..." : "Clock In / Verify")));
 };
-export { FaceEnrollment } from "./Enrollment";
+export { FaceEnrollment } from "./Enrollment.js";
 export default FaceAttendanceKiosk;

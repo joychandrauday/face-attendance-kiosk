@@ -18,6 +18,6 @@ export interface FaceAttendanceKioskProps {
     title?: string;
 }
 export declare const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps>;
-export { FaceEnrollment } from "./Enrollment";
-export type { FaceEnrollmentProps, EnrollmentSuccessResult } from "./Enrollment";
+export { FaceEnrollment } from "./Enrollment.js";
+export type { FaceEnrollmentProps, EnrollmentSuccessResult } from "./Enrollment.js";
 export default FaceAttendanceKiosk;
