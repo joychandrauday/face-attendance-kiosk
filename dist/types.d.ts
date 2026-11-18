@@ -1,0 +1,77 @@
+import React from "react";
+export type KioskTheme = "dark" | "light" | "transparent";
+export type PunchDirection = "AUTO" | "IN" | "OUT";
+export interface AttendanceSuccessResult {
+    match: boolean;
+    employee_id: string;
+    confidence: number;
+    timestamp: string;
+    punch_type?: string;
+    session_duration_minutes?: number;
+    message: string;
+}
+export interface EnrollmentSuccessResult {
+    status: string;
+    employee_id: string;
+    workspace_id: string;
+    message: string;
+}
+export interface KioskCustomStyles {
+    container?: React.CSSProperties;
+    header?: React.CSSProperties;
+    viewfinder?: React.CSSProperties;
+    button?: React.CSSProperties;
+    hud?: React.CSSProperties;
+    overlay?: React.CSSProperties;
+}
+export interface FaceAttendanceKioskProps {
+    apiKey?: string;
+    api_key?: string;
+    workspaceId?: string;
+    workspace_id?: string;
+    apiUrl?: string;
+    /** Punch mode: "AUTO" (smart auto-toggle), "IN" (clock in only), "OUT" (clock out only) */
+    punchType?: PunchDirection;
+    /** Whether to show the interactive mode selector (Auto / In / Out) */
+    showModeSelector?: boolean;
+    /** Visual theme preset: "dark" (default), "light", or "transparent" for seamless CRM embedding */
+    theme?: KioskTheme;
+    /** Custom granular CSS style overrides */
+    styles?: KioskCustomStyles;
+    /** Whether to render the default header bar */
+    hideHeader?: boolean;
+    /** Custom title for the kiosk header */
+    title?: string;
+    /** Custom subtitle or workspace label */
+    subtitle?: string;
+    /** Enable audio chime on successful attendance scan (default: true) */
+    enableSound?: boolean;
+    /** Mirror camera horizontally for selfie orientation (default: true) */
+    mirror?: boolean;
+    /** Enable hands-free continuous presence scan (default: false) */
+    autoScan?: boolean;
+    /** Callbacks */
+    onSuccess?: (result: AttendanceSuccessResult) => void;
+    onError?: (errorMessage: string) => void;
+    onStatusChange?: (status: string) => void;
+    className?: string;
+}
+export interface FaceEnrollmentProps {
+    apiKey?: string;
+    api_key?: string;
+    workspaceId?: string;
+    workspace_id?: string;
+    employeeId?: string;
+    employee_id?: string;
+    apiUrl?: string;
+    /** Visual theme preset */
+    theme?: KioskTheme;
+    /** Granular style overrides */
+    styles?: KioskCustomStyles;
+    /** Whether to hide default header */
+    hideHeader?: boolean;
+    title?: string;
+    className?: string;
+    onSuccess?: (result: EnrollmentSuccessResult) => void;
+    onError?: (errorMessage: string) => void;
+}

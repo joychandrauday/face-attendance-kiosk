@@ -1,6 +1,6 @@
 {
   "name": "@karalasoft/face-attendance-kiosk",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "type": "module",
   "description": "Zero-overhead React / Next.js SDK for SureClock Biometric Face Attendance Kiosks",
   "main": "dist/index.js",

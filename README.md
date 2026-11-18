@@ -1,33 +1,50 @@
 # @karalasoft/face-attendance-kiosk
 
-Zero‑overhead, client‑side drop‑in React/Next.js biometric components for SureClock. The library works in any React‑based environment – plain JSX, TSX, or Next.js (including server‑components when appropriate).
+Enterprise-grade, zero-overhead React & Next.js biometric attendance SDK for **SureClock**. Designed to drop seamlessly into any CRM, ERP, HR portal, or dedicated physical kiosk tablet.
 
 ---
 
-## Components Included
+## Key Features
 
-1. **`<FaceAttendanceKiosk />`** – A ready‑to‑use attendance/check‑in UI.
-2. **`<FaceEnrollment />`** – A component for enrolling employee face biometrics.
+1. **Dual-Mode Attendance (`<FaceAttendanceKiosk />`)**:
+   * **Smart Auto-Toggle**: Automatically recognizes whether an employee is clocking in or clocking out.
+   * **Explicit Controls**: Switch between `Auto`, `Clock In`, or `Clock Out` modes with a single click.
+   * **Hands-Free Auto-Scan (`autoScan`)**: Continuously verifies employees as they approach the terminal.
+   * **Shift Duration Display**: Instantly calculates and displays shift duration upon clock-out.
+   * **Acoustic Feedback**: Pleasant harmonic verification chime (can be silenced with `enableSound={false}`).
+
+2. **Universal CRM / ERP Theming**:
+   * **Theme Presets**: `"dark"` (Obsidian), `"light"` (Slate / White), or `"transparent"` (embeds seamlessly into any parent card or modal).
+   * **Granular CSS Overrides (`styles`)**: Direct control over `container`, `header`, `viewfinder`, `button`, and `hud`.
+   * **Header Toggle (`hideHeader`)**: Suppress the built-in header to render your CRM's bespoke navigation.
+
+3. **Biometric Face Enrollment (`<FaceEnrollment />`)**:
+   * Supports live webcam capture **and** drag-and-drop file upload (PNG, JPG, WebP).
+   * Multi-angle capture support (`front`, `left`, `right`).
+
+4. **Built-in Presentation Attack Detection (Liveness)**:
+   * Client-side temporal micro-motion verification before payload transmission.
 
 ---
 
 ## Installation
 
 ```bash
-# Install directly from the public GitHub repository:
-npm install joychandrauday/face-attendance-kiosk
-
-# Or via the npm package registry:
+# via npm:
 npm install @karalasoft/face-attendance-kiosk
+
+# via pnpm:
+pnpm add @karalasoft/face-attendance-kiosk
+
+# via yarn:
+yarn add @karalasoft/face-attendance-kiosk
 ```
 
 ---
 
-## Usage (React / Next.js)
+## Quickstart
 
-Both components are fully typed and can be used in JavaScript (`.jsx`) or TypeScript (`.tsx`) files. In Next.js, mark the file as a client component (`'use client'`).
-
-### 1. Attendance / Check‑in Component
+### 1. Attendance Terminal (Kiosk / CRM View)
 
 ```tsx
 'use client';
@@ -36,44 +53,60 @@ import { FaceAttendanceKiosk } from '@karalasoft/face-attendance-kiosk';
 
 export default function AttendancePage() {
   return (
-    <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#020617' }}>
+    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#080d1a' }}>
       <FaceAttendanceKiosk
-        api_key="pk_live_YOUR_PUBLISHABLE_KEY"
-        workspace_id="your_workspace_id"
+        apiKey="pk_live_YOUR_PUBLISHABLE_KEY"
+        workspaceId="your-workspace-slug"
+        theme="dark"
+        showModeSelector={true}
+        enableSound={true}
         onSuccess={(result) => {
-          console.log(`Check‑in verified for ${result.employee_id} at ${result.timestamp}`);
+          console.log(`Verified ${result.employee_id} (${result.punch_type})`);
+          if (result.session_duration_minutes) {
+            console.log(`Shift duration: ${result.session_duration_minutes} mins`);
+          }
         }}
         onError={(err) => {
-          console.warn('Check‑in failed:', err);
+          console.warn('Authentication failed:', err);
         }}
       />
-    </main>
+    </div>
   );
 }
 ```
 
-### 2. Employee Enrollment Component
+### 2. Seamless Light-Themed CRM Embed
+
+```tsx
+<FaceAttendanceKiosk
+  apiKey="pk_live_..."
+  workspaceId="showroom-dhaka"
+  theme="light"
+  hideHeader={true}
+  styles={{
+    container: { border: 'none', boxShadow: 'none', maxWidth: '100%' },
+  }}
+  onSuccess={(result) => handleCrmCheckIn(result)}
+/>
+```
+
+### 3. Employee Biometric Enrollment (HR Portal)
 
 ```tsx
 'use client';
 
 import { FaceEnrollment } from '@karalasoft/face-attendance-kiosk';
 
-export default function EnrollmentPage() {
+export default function EnrollmentModal({ employeeId }: { employeeId: string }) {
   return (
-    <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#020617' }}>
-      <FaceEnrollment
-        api_key="sk_live_YOUR_SECRET_KEY"
-        workspace_id="your_workspace_id"
-        employee_id="EMP_042" // optional – omit to let HR enter an ID
-        onSuccess={(result) => {
-          alert(`Employee ${result.employee_id} successfully enrolled!`);
-        }}
-        onError={(err) => {
-          console.error('Enrollment error:', err);
-        }}
-      />
-    </main>
+    <FaceEnrollment
+      apiKey="sk_live_YOUR_SECRET_KEY"
+      workspaceId="showroom-dhaka"
+      employeeId={employeeId}
+      theme="dark"
+      onSuccess={(res) => alert(`Enrolled: ${res.employee_id}`)}
+      onError={(err) => alert(`Error: ${err}`)}
+    />
   );
 }
 ```
@@ -83,28 +116,40 @@ export default function EnrollmentPage() {
 ## Props Reference
 
 ### `<FaceAttendanceKiosk />`
-| Prop | Type | Required | Description |
-| :--- | :--- | :---: | :--- |
-| `api_key` | `string` | **Yes** | Publishable key (`pk_live_...`). |
-| `workspace_id` | `string` | **Yes** | Identifier for the workspace where attendance is recorded. |
-| `apiUrl` | `string` | No | Custom API endpoint (default: `https://api.sureclock.karalasoft.com`). |
-| `title` | `string` | No | Header title displayed above the viewfinder. |
-| `onSuccess` | `(result) => void` | No | Called when a face match exceeds the success threshold. |
-| `onError` | `(error) => void` | No | Called on recognition failure or network error. |
+
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `apiKey` | `string` | **Required** | Publishable key (`pk_live_...`). Safe for client-side use. |
+| `workspaceId` | `string` | **Required** | Target workspace tenant slug. |
+| `punchType` | `"AUTO" \| "IN" \| "OUT"` | `"AUTO"` | Default punch direction. |
+| `showModeSelector` | `boolean` | `true` | Displays segmented Auto / In / Out selector buttons. |
+| `theme` | `"dark" \| "light" \| "transparent"` | `"dark"` | Visual styling preset. |
+| `styles` | `KioskCustomStyles` | `{}` | Granular style overrides for `container`, `header`, `viewfinder`, etc. |
+| `hideHeader` | `boolean` | `false` | Hides the default top bar (useful when embedding in custom CRM headers). |
+| `title` | `string` | `"Showroom Attendance Kiosk"` | Title displayed in the header. |
+| `enableSound` | `boolean` | `true` | Plays harmonic chime upon successful match. |
+| `mirror` | `boolean` | `true` | Flips viewfinder horizontally for natural selfie orientation. |
+| `autoScan` | `boolean` | `false` | Enables hands-free continuous presence verification. |
+| `apiUrl` | `string` | `"https://api.sureclock.karalasoft.com"` | Custom API base URL. |
+| `onSuccess` | `(result: AttendanceSuccessResult) => void` | `undefined` | Callback fired on biometric verification success. |
+| `onError` | `(errorMessage: string) => void` | `undefined` | Callback fired on recognition failure or network error. |
+| `onStatusChange` | `(status: string) => void` | `undefined` | Callback on state transitions (`LIVENESS_CHECK`, `AUTHENTICATING`, etc.). |
 
 ### `<FaceEnrollment />`
-| Prop | Type | Required | Description |
-| :--- | :--- | :---: | :--- |
-| `api_key` | `string` | **Yes** | Secret platform key (`sk_live_...`). |
-| `workspace_id` | `string` | **Yes** | Workspace where the biometric data will be stored. |
-| `employee_id` | `string` | No | Pre‑bind an employee ID; omit to let the user input it. |
-| `apiUrl` | `string` | No | Custom API endpoint (default: `https://api.sureclock.karalasoft.com`). |
-| `onSuccess` | `(result) => void` | No | Called after successful enrollment. |
-| `onError` | `(error) => void` | No | Called on enrollment failure.
+
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `apiKey` | `string` | **Required** | Secret key (`sk_live_...`). Used by HR / admin portals. |
+| `workspaceId` | `string` | **Required** | Workspace tenant slug. |
+| `employeeId` | `string` | `undefined` | Pre-bound employee code. If omitted, input field is rendered. |
+| `theme` | `"dark" \| "light" \| "transparent"` | `"dark"` | Visual preset. |
+| `hideHeader` | `boolean` | `false` | Hides the default header. |
+| `styles` | `KioskCustomStyles` | `{}` | Custom styling overrides. |
+| `onSuccess` | `(result: EnrollmentSuccessResult) => void` | `undefined` | Fired when face vector is saved. |
+| `onError` | `(errorMessage: string) => void` | `undefined` | Fired on enrollment failure. |
 
 ---
 
-## Notes
-- The components are built as ES modules (`"type": "module"` in `package.json`). Ensure your bundler supports ESM.
-- TypeScript definitions are included; you can import the types directly if needed.
-- For server‑side rendering (SSR) scenarios, only render the components on the client side (`'use client'`).
+## License
+
+MIT © KaralaSoft Team & SureClock Contributors
