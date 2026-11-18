@@ -6,12 +6,15 @@ Enterprise-grade, zero-overhead React & Next.js biometric attendance SDK for **S
 
 ## Key Features
 
-1. **Dual-Mode Attendance (`<FaceAttendanceKiosk />`)**:
-   * **Smart Auto-Toggle**: Automatically recognizes whether an employee is clocking in or clocking out.
-   * **Explicit Controls**: Switch between `Auto`, `Clock In`, or `Clock Out` modes with a single click.
-   * **Hands-Free Auto-Scan (`autoScan`)**: Continuously verifies employees as they approach the terminal.
-   * **Shift Duration Display**: Instantly calculates and displays shift duration upon clock-out.
-   * **Acoustic Feedback**: Pleasant harmonic verification chime (can be silenced with `enableSound={false}`).
+1. **Streamlined Verification (`<FaceAttendanceKiosk />`)**:
+   * **Single "Verify" Action**: Employees simply tap a clean **"Verify"** button (or let hands-free `autoScan` detect them). No confusing toggles needed.
+   * **Intelligent Auto-Toggle**: Automatically recognizes whether an employee is clocking in (first punch of shift) or clocking out (closing shift).
+   * **Smart Feedback Messaging**:
+     * First punch $\rightarrow$ Prominent Emerald **Clock In Recorded** confirmation badge with shift start greeting.
+     * Subsequent punch $\rightarrow$ Prominent Amber **Clock Out Recorded** badge with formatted **Shift Duration** (`8h 15m`).
+   * **Debounce Guard**: Prevents accidental double scans within 120 seconds of clocking in.
+   * **Acoustic Feedback**: Pleasant harmonic verification chime (`enableSound={true|false}`).
+   * **Hands-Free Auto-Scan (`autoScan`)**: Continuously verifies employees as they approach the terminal without tapping.
 
 2. **Universal CRM / ERP Theming**:
    * **Theme Presets**: `"dark"` (Obsidian), `"light"` (Slate / White), or `"transparent"` (embeds seamlessly into any parent card or modal).
