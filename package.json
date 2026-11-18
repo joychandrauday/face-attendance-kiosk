@@ -1,0 +1,39 @@
+{
+  "name": "@karalasoft/face-attendance-kiosk",
+  "version": "1.0.1",
+  "description": "Zero-overhead React / Next.js SDK for SureClock Biometric Face Attendance Kiosks",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "react",
+    "nextjs",
+    "face-attendance",
+    "kiosk",
+    "biometric",
+    "karalasoft",
+    "sureclock"
+  ],
+  "author": "KaralaSoft Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.0.0"
+  }
+}
