@@ -17,6 +17,7 @@ export interface EnrollmentSuccessResult {
     workspace_id: string;
     message: string;
     angles_captured?: string[];
+    image_urls?: Record<string, string | null>;
 }
 export interface KioskCustomStyles {
     container?: React.CSSProperties;

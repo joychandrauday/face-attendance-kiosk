@@ -1,8 +1,14 @@
+export interface EmployeeAngleImage {
+    angle: string;
+    image_url: string | null;
+}
 export interface EnrolledEmployee {
     employee_id: string;
     workspace_id: string;
     enrolled_at?: string;
     angles?: string[];
+    image_url?: string | null;
+    angle_images?: EmployeeAngleImage[];
 }
 export interface AttendanceStatResult {
     workspace_id: string;
@@ -36,6 +42,7 @@ export interface RegisterFaceResponse {
     employee_id: string;
     workspace_id: string;
     message: string;
+    image_url?: string | null;
 }
 /** Fetch list of employees in workspace */
 export declare function fetchEmployees(apiKey: string, workspaceId: string, apiUrl?: string): Promise<EnrolledEmployee[]>;

@@ -18,6 +18,17 @@ export const FaceEnrollment = ({ apiKey, api_key, workspaceId, workspace_id, emp
         right: null,
         front: null,
     });
+    const [capturedCloudinaryUrls, setCapturedCloudinaryUrls] = useState({
+        left: null,
+        right: null,
+        front: null,
+    });
+    const capturedCloudinaryUrlsRef = useRef({
+        left: null,
+        right: null,
+        front: null,
+    });
+    const [detectedAngle, setDetectedAngle] = useState("none");
     const [inputMode, setInputMode] = useState("camera");
     const [hasCamera, setHasCamera] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -119,22 +130,22 @@ export const FaceEnrollment = ({ apiKey, api_key, workspaceId, workspace_id, emp
             }
         };
     }, [inputMode, isAllComplete]);
-    // Frame capture helper (crops to 224x224 JPEG)
+    // Frame capture helper (crops to 320x320 JPEG)
     const captureFrame = useCallback(() => {
         const video = videoRef.current;
         const canvas = canvasRef.current;
         if (!video || !canvas || video.videoWidth === 0)
             return null;
-        canvas.width = 224;
-        canvas.height = 224;
+        canvas.width = 320;
+        canvas.height = 320;
         const ctx = canvas.getContext("2d", { willReadFrequently: true });
         if (!ctx)
             return null;
         const size = Math.min(video.videoWidth, video.videoHeight);
         const startX = (video.videoWidth - size) / 2;
         const startY = (video.videoHeight - size) / 2;
-        ctx.drawImage(video, startX, startY, size, size, 0, 0, 224, 224);
-        return canvas.toDataURL("image/jpeg", 0.72);
+        ctx.drawImage(video, startX, startY, size, size, 0, 0, 320, 320);
+        return canvas.toDataURL("image/jpeg", 0.82);
     }, []);
     // Upload a single angle photo to backend
     const uploadAnglePhoto = useCallback(async (angle, photoBase64) => {
@@ -163,6 +174,10 @@ export const FaceEnrollment = ({ apiKey, api_key, workspaceId, workspace_id, emp
             const data = await resp.json();
             if (!resp.ok) {
                 throw new Error(data.message || `Enrollment failed (${resp.status})`);
+            }
+            if (data.image_url) {
+                setCapturedCloudinaryUrls((prev) => ({ ...prev, [angle]: data.image_url }));
+                capturedCloudinaryUrlsRef.current[angle] = data.image_url;
             }
             // Trigger angle complete callback
             if (onAngleComplete) {
@@ -229,6 +244,7 @@ export const FaceEnrollment = ({ apiKey, api_key, workspaceId, workspace_id, emp
                         workspace_id: effectiveWorkspaceId,
                         message: "Enrolled all biometric angles successfully.",
                         angles_captured: ["left", "right", "front"],
+                        image_urls: capturedCloudinaryUrlsRef.current,
                     });
                 }
             }
@@ -250,7 +266,7 @@ export const FaceEnrollment = ({ apiKey, api_key, workspaceId, workspace_id, emp
         effectiveWorkspaceId,
         onSuccess,
     ]);
-    // Real-time loop: Frame centering, lighting & stability analysis
+    // Real-time loop: Frame centering, lighting, head-angle pose & stability analysis
     useEffect(() => {
         if (inputMode !== "camera" || isAllComplete || isProcessing || !hasCamera)
             return;
@@ -270,7 +286,7 @@ export const FaceEnrollment = ({ apiKey, api_key, workspaceId, workspace_id, emp
                 ctx.drawImage(video, startX, startY, roiSize, roiSize, 0, 0, 120, 120);
                 const imgData = ctx.getImageData(0, 0, 120, 120);
                 const data = imgData.data;
-                // 1. Luminance check
+                // 1. Luminance & Clarity check
                 let sumLuma = 0;
                 let highFreqDiff = 0;
                 for (let i = 0; i < data.length; i += 4) {
@@ -292,7 +308,57 @@ export const FaceEnrollment = ({ apiKey, api_key, workspaceId, workspace_id, emp
                     motionDelta = diff / (data.length / 16);
                 }
                 prevFrameBuffer.current = new Uint8ClampedArray(data);
-                // Validation logic
+                // 3. Head Yaw Pose Detection (horizontal feature gradient & asymmetry)
+                // Focus on vertical center 20% to 80%
+                let weightedXSum = 0;
+                let totalWeight = 0;
+                let leftLuma = 0;
+                let rightLuma = 0;
+                let leftPixels = 0;
+                let rightPixels = 0;
+                for (let y = 24; y < 96; y++) {
+                    for (let x = 2; x < 118; x++) {
+                        const idx = (y * 120 + x) * 4;
+                        const luma = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+                        const prevLuma = 0.299 * data[idx - 4] + 0.587 * data[idx - 3] + 0.114 * data[idx - 2];
+                        const nextLuma = 0.299 * data[idx + 4] + 0.587 * data[idx + 5] + 0.114 * data[idx + 6];
+                        const edge = Math.abs(nextLuma - prevLuma);
+                        if (edge > 4) {
+                            weightedXSum += x * edge;
+                            totalWeight += edge;
+                        }
+                        if (x < 60) {
+                            leftLuma += luma;
+                            leftPixels++;
+                        }
+                        else {
+                            rightLuma += luma;
+                            rightPixels++;
+                        }
+                    }
+                }
+                const featureCenterX = totalWeight > 0 ? weightedXSum / totalWeight : 60;
+                const avgLeftLuma = leftPixels > 0 ? leftLuma / leftPixels : 1;
+                const avgRightLuma = rightPixels > 0 ? rightLuma / rightPixels : 1;
+                const lumaDiffRatio = (avgLeftLuma - avgRightLuma) / Math.max(10, (avgLeftLuma + avgRightLuma) / 2);
+                // Raw coordinates: video is mirrored with scaleX(-1) in UI.
+                // When user turns head to THEIR LEFT:
+                // features shift right in raw frame (featureCenterX > 60), right side is brighter (lumaDiffRatio < 0).
+                // In UI space (what user perceives):
+                const rawOffset = (featureCenterX - 60) / 30; // -1 to +1
+                const perceivedYaw = -(rawOffset * 0.7 - lumaDiffRatio * 0.3);
+                let pose = "front";
+                if (perceivedYaw < -0.08) {
+                    pose = "left";
+                }
+                else if (perceivedYaw > 0.08) {
+                    pose = "right";
+                }
+                else {
+                    pose = "front";
+                }
+                setDetectedAngle(pose);
+                // 4. Validation logic with angle match gating
                 if (avgLuma < 35) {
                     setQualityText("Too Dark - Increase lighting");
                     setIsCentered(false);
@@ -305,29 +371,53 @@ export const FaceEnrollment = ({ apiKey, api_key, workspaceId, workspace_id, emp
                     stabilityCounter.current = 0;
                     setCenteringProgress(0);
                 }
-                else if (avgClarity < 3) {
+                else if (avgClarity < 2.5) {
                     setQualityText("Focusing... Please hold steady");
                     setIsCentered(false);
                     stabilityCounter.current = 0;
                     setCenteringProgress(0);
                 }
                 else {
-                    // Centered and well-lit: check if user holds position
-                    if (motionDelta < 9.5) {
-                        stabilityCounter.current = Math.min(10, stabilityCounter.current + 1);
-                        setIsCentered(true);
-                        setQualityText(`Perfect! Hold still (${currentAngle.toUpperCase()})...`);
+                    // Check if detected pose matches current expected angle
+                    const angleMatched = pose === currentAngle;
+                    if (!angleMatched) {
+                        // Wrong angle: strictly prevent capture and instruct user
+                        stabilityCounter.current = Math.max(0, stabilityCounter.current - 2);
+                        setIsCentered(false);
+                        if (currentAngle === "left") {
+                            setQualityText(pose === "front"
+                                ? "Turn face to the LEFT ⬅️ (Facing front)"
+                                : "Turn face to the LEFT ⬅️");
+                        }
+                        else if (currentAngle === "right") {
+                            setQualityText(pose === "front"
+                                ? "Turn face to the RIGHT ➡️ (Facing front)"
+                                : "Turn face to the RIGHT ➡️");
+                        }
+                        else {
+                            setQualityText("Look straight at the camera 🎯");
+                        }
+                        const progress = Math.min(100, Math.round((stabilityCounter.current / 7) * 100));
+                        setCenteringProgress(progress);
                     }
                     else {
-                        stabilityCounter.current = Math.max(0, stabilityCounter.current - 1);
-                        setIsCentered(false);
-                        setQualityText(`Turn face ${currentAngle.toUpperCase()} and align`);
-                    }
-                    const progress = Math.min(100, Math.round((stabilityCounter.current / 7) * 100));
-                    setCenteringProgress(progress);
-                    // Threshold reached: Automatic snapshot!
-                    if (progress >= 100 && !isCapturingRef.current) {
-                        triggerAutoCapture();
+                        // Correct angle: check motion stability
+                        if (motionDelta < 9.5) {
+                            stabilityCounter.current = Math.min(10, stabilityCounter.current + 1);
+                            setIsCentered(true);
+                            setQualityText(`Pose Matched (${currentAngle.toUpperCase()})! Hold still...`);
+                        }
+                        else {
+                            stabilityCounter.current = Math.max(0, stabilityCounter.current - 1);
+                            setIsCentered(false);
+                            setQualityText(`Hold still (${currentAngle.toUpperCase()} angle)...`);
+                        }
+                        const progress = Math.min(100, Math.round((stabilityCounter.current / 7) * 100));
+                        setCenteringProgress(progress);
+                        // Threshold reached: Automatic snapshot!
+                        if (progress >= 100 && !isCapturingRef.current) {
+                            triggerAutoCapture();
+                        }
                     }
                 }
             }
@@ -575,24 +665,37 @@ export const FaceEnrollment = ({ apiKey, api_key, workspaceId, workspace_id, emp
                     right: "14px",
                     padding: "8px 12px",
                     borderRadius: "8px",
-                    background: "rgba(0, 0, 0, 0.7)",
+                    background: "rgba(0, 0, 0, 0.75)",
                     backdropFilter: "blur(6px)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                     color: "#f8fafc",
                     fontSize: "0.78rem",
+                    gap: "8px",
                 } },
-                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "6px" } },
+                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "6px", overflow: "hidden" } },
                     React.createElement("span", { style: {
                             width: "8px",
                             height: "8px",
                             borderRadius: "50%",
                             backgroundColor: isCentered ? "#10b981" : "#0ea5e9",
                             boxShadow: isCentered ? "0 0 8px #10b981" : "none",
+                            flexShrink: 0,
                         } }),
-                    React.createElement("span", null, qualityText)),
-                React.createElement("span", { style: { fontFamily: "monospace", color: "#38bdf8", fontWeight: 700 } }, centeringProgress >= 100 ? "CAPTURING" : "AUTO SCAN")))) : (React.createElement("div", { onClick: () => fileInputRef.current?.click(), style: {
+                    React.createElement("span", { style: { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, qualityText)),
+                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 } },
+                    React.createElement("span", { style: {
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            fontSize: "0.68rem",
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            backgroundColor: detectedAngle === currentAngle ? "rgba(16, 185, 129, 0.25)" : "rgba(239, 68, 68, 0.25)",
+                            color: detectedAngle === currentAngle ? "#34d399" : "#fca5a5",
+                            border: `1px solid ${detectedAngle === currentAngle ? "rgba(16, 185, 129, 0.5)" : "rgba(239, 68, 68, 0.5)"}`,
+                        } }, detectedAngle === currentAngle ? `✓ ${detectedAngle}` : `Pose: ${detectedAngle}`),
+                    React.createElement("span", { style: { fontFamily: "monospace", color: "#38bdf8", fontWeight: 700, fontSize: "0.72rem" } }, centeringProgress >= 100 ? "CAPTURING" : `${centeringProgress}%`))))) : (React.createElement("div", { onClick: () => fileInputRef.current?.click(), style: {
                 position: "absolute",
                 inset: 0,
                 display: "flex",
@@ -611,7 +714,7 @@ export const FaceEnrollment = ({ apiKey, api_key, workspaceId, workspace_id, emp
         React.createElement("input", { ref: fileInputRef, type: "file", accept: "image/*", onChange: handleFileUpload, style: { display: "none" } }),
         React.createElement("canvas", { ref: canvasRef, style: { display: "none" } }),
         React.createElement("div", { style: { display: "flex", gap: "10px", marginTop: "14px" } }, ANGLES.map((angle) => {
-            const thumb = capturedThumbnails[angle];
+            const thumb = capturedCloudinaryUrls[angle] || capturedThumbnails[angle];
             return (React.createElement("div", { key: angle, style: {
                     flex: 1,
                     aspectRatio: "1",
@@ -639,7 +742,19 @@ export const FaceEnrollment = ({ apiKey, api_key, workspaceId, workspace_id, emp
                         justifyContent: "center",
                         fontSize: "0.6rem",
                         fontWeight: 700,
-                    } }, "\u2713"))));
+                    } }, "\u2713")),
+                capturedCloudinaryUrls[angle] && (React.createElement("div", { style: {
+                        position: "absolute",
+                        bottom: "2px",
+                        left: "2px",
+                        right: "2px",
+                        backgroundColor: "rgba(0,0,0,0.6)",
+                        color: "#38bdf8",
+                        fontSize: "0.55rem",
+                        textAlign: "center",
+                        borderRadius: "2px",
+                        fontWeight: 600,
+                    } }, "Cloudinary"))));
         })),
         isAllComplete && (React.createElement("div", { style: {
                 marginTop: "16px",

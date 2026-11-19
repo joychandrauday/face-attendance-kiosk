@@ -140,62 +140,84 @@ export const FaceTable: React.FC<FaceTableProps> = ({
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
-          {["left", "right", "front"].map((angle) => (
-            <div
-              key={angle}
-              style={{
-                borderRadius: "12px",
-                border: `1px solid ${border}`,
-                backgroundColor: surface,
-                padding: "16px",
-                boxSizing: "border-box",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", color: "#38bdf8" }}>
-                  {angle} Angle
-                </span>
-                <span
-                  style={{
-                    padding: "2px 8px",
-                    borderRadius: "12px",
-                    fontSize: "0.72rem",
-                    fontWeight: 600,
-                    backgroundColor: isLight ? "#ecfdf5" : "rgba(16, 185, 129, 0.15)",
-                    color: "#10b981",
-                  }}
-                >
-                  ✓ Registered
-                </span>
-              </div>
+          {["left", "right", "front"].map((angle) => {
+            const angleImg =
+              currentEmp.angle_images?.find((ai) => ai.angle === angle)?.image_url ||
+              (angle === "front" ? currentEmp.image_url : null);
 
+            return (
               <div
+                key={angle}
                 style={{
-                  height: "110px",
-                  borderRadius: "8px",
-                  backgroundColor: isLight ? "#f1f5f9" : "#080c17",
-                  border: `1px dashed ${border}`,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: "12px",
-                  color: textMuted,
+                  borderRadius: "12px",
+                  border: `1px solid ${border}`,
+                  backgroundColor: surface,
+                  padding: "16px",
+                  boxSizing: "border-box",
                 }}
               >
-                <span style={{ fontSize: "1.8rem", marginBottom: "4px" }}>
-                  {angle === "left" ? "👤⬅" : angle === "right" ? "👤➡" : "👤🎯"}
-                </span>
-                <span style={{ fontSize: "0.72rem" }}>128D Mathematical Vector</span>
-              </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", color: "#38bdf8" }}>
+                    {angle} Angle
+                  </span>
+                  <span
+                    style={{
+                      padding: "2px 8px",
+                      borderRadius: "12px",
+                      fontSize: "0.72rem",
+                      fontWeight: 600,
+                      backgroundColor: isLight ? "#ecfdf5" : "rgba(16, 185, 129, 0.15)",
+                      color: "#10b981",
+                    }}
+                  >
+                    ✓ Registered
+                  </span>
+                </div>
 
-              <div style={{ fontSize: "0.76rem", color: textMuted }}>
-                <div>Employee: <strong style={{ color: textPrimary, fontFamily: "monospace" }}>{currentEmp.employee_id}</strong></div>
-                <div style={{ marginTop: "4px" }}>Workspace: {currentEmp.workspace_id}</div>
-                <div style={{ marginTop: "4px" }}>Status: Active 1:N Matchable</div>
+                <div
+                  style={{
+                    height: "140px",
+                    borderRadius: "8px",
+                    backgroundColor: isLight ? "#f1f5f9" : "#080c17",
+                    border: `1px solid ${border}`,
+                    overflow: "hidden",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: "12px",
+                    color: textMuted,
+                    position: "relative",
+                  }}
+                >
+                  {angleImg ? (
+                    <img
+                      src={angleImg}
+                      alt={`${currentEmp.employee_id} ${angle}`}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <>
+                      <span style={{ fontSize: "1.8rem", marginBottom: "4px" }}>
+                        {angle === "left" ? "👤⬅" : angle === "right" ? "👤➡" : "👤🎯"}
+                      </span>
+                      <span style={{ fontSize: "0.72rem" }}>128D Mathematical Vector</span>
+                    </>
+                  )}
+                </div>
+
+                <div style={{ fontSize: "0.76rem", color: textMuted }}>
+                  <div>Employee: <strong style={{ color: textPrimary, fontFamily: "monospace" }}>{currentEmp.employee_id}</strong></div>
+                  <div style={{ marginTop: "4px" }}>Workspace: {currentEmp.workspace_id}</div>
+                  <div style={{ marginTop: "4px" }}>Status: Active 1:N Matchable</div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
