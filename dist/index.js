@@ -1,3 +1,9 @@
 "use client";
 export { FaceAttendanceKiosk } from "./FaceAttendanceKiosk.js";
 export { FaceEnrollment } from "./Enrollment.js";
+export { SureClockManager, Management } from "./Management.js";
+export { EmployeeTable } from "./EmployeeTable.js";
+export { FaceTable } from "./FaceTable.js";
+export { AnalyticsDashboard } from "./AnalyticsDashboard.js";
+export * as api from "./api.js";
+export { fetchEmployees, deleteEmployee, registerFaceAngle, fetchAttendanceStats, fetchAttendanceLogs, } from "./api.js";

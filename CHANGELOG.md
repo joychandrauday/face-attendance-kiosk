@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] - 2026-11-19
+### Added
+- **Automated Hands-Free Multi-Angle Biometric Enrollment (`<FaceEnrollment />`)**:
+  - Sequential guided capture workflow: **Left ➔ Right ➔ Front** with zero manual button clicking required.
+  - Interactive **3D Head Rotation Animation Guide**: Visual face guide smoothly rotates (`rotateY`) towards the required angle with directional arrows to guide the employee.
+  - **Real-Time Quality & Centering Engine**:
+    - High-frequency variance sharpness / clarity analysis.
+    - Intelligent ambient luminance filter (prevents overexposed backlights or underexposed shadows).
+    - Pixel-difference frame motion stability tracking with auto-countdown progress ring (0% ➔ 100%).
+    - Automatic snapshot trigger and instant 128D vector extraction upon optimal centering and stability.
+    - Automatic permission progression from Left to Right to Front.
+- **Unified In-SDK Biometric Hub & Analytics (`<SureClockManager />` / `<Management />`)**:
+  - Eliminates the need for a separate admin panel—embed full data management directly inside any CRM, ERP, or portal.
+  - **Employee Administration**: Searchable staff registry, deletion with GDPR biometric purge, and 1-click modal for multi-angle biometric enrollment.
+  - **Biometric Faces Repository**: Inspect 128D biometric vector registration across angles (Left, Right, Front) and trigger re-enrollment.
+  - **Interactive Analytics Dashboard**:
+    - High-level KPIs: Total enrolled staff, present today, active on-duty, total punches, and average recognition confidence %.
+    - **Recharts Hourly Punch Volume Chart**: Visual distribution of attendance activity from 07:00 to 20:00.
+    - **Live Biometric Audit Log Stream**: Real-time record of verification timestamps, IN/OUT direction badges, and match confidence scores.
+- **Exported API Client**: Full typed TypeScript functions (`fetchEmployees`, `deleteEmployee`, `registerFaceAngle`, `fetchAttendanceStats`, `fetchAttendanceLogs`).
+
 ## [1.2.1] - 2026-11-19
 ### Changed & Upgraded
 - Streamlined primary kiosk interaction to a single, high-trust **"Verify"** button (`buttonLabel="Verify"`), eliminating multi-button ambiguity for employees.
@@ -9,37 +30,18 @@ All notable changes to this project will be documented in this file.
 - Intelligent verification messaging:
   - **Clock In**: Displays a prominent Emerald badge `● CLOCK IN RECORDED`, welcome text `"Clock-in confirmed. Have a great shift!"`, and timestamps.
   - **Clock Out**: Displays a prominent Amber badge `● CLOCK OUT RECORDED`, completion text `"Clock-out logged. Shift completed."`, and a dedicated Shift Duration card (`{hours}h {minutes}m` in `font-mono tabular-nums`).
-- Upgraded UI design to strict anti-slop B2B standards:
-  - Obsidian surface styling (`#080D1A`, `#0F172A`) with crisp 1px borders (`#1E293B`).
-  - Native inline SVG icons (Biometric Shield, Reticle, Checkmark, Camera, Upload) with zero external icon dependencies.
-  - Smooth biometric scan line animation during authentication.
-  - Polished `<FaceEnrollment />` component with sleek B2B file picker and angle tags.
+- Upgraded UI design to strict anti-slop B2B standards.
 
 ## [1.1.0] - 2026-11-19
 ### Added
-- Multi-theme support: `theme="dark"`, `theme="light"`, and `theme="transparent"` for seamless embedding into external CRMs.
-- Granular CSS style overrides via the `styles` prop (`container`, `header`, `viewfinder`, `button`, `hud`, `overlay`).
-- Live digital time clock (`font-mono tabular-nums`) on the terminal header.
-- Punch direction controls with segmented mode selector (`showModeSelector`): Auto Smart-Toggle, Clock In Only, and Clock Out Only.
-- Shift duration calculation and display on successful clock-out (`session_duration_minutes`).
-- Hands-free auto-scan mode (`autoScan={true}`) for walk-up attendance kiosks.
+- Multi-theme support: `theme="dark"`, `theme="light"`, and `theme="transparent"`.
+- Granular CSS style overrides via the `styles` prop.
+- Hands-free auto-scan mode (`autoScan={true}`).
 - Multi-camera device enumeration and switcher dropdown.
 - Audio verification chime with toggle prop (`enableSound={true|false}`).
 - Horizontal camera mirroring toggle (`mirror={true|false}`).
-- File upload support in `<FaceEnrollment />` alongside live camera snapshot.
-- Multi-angle facial embedding tag selector (`front`, `left`, `right`).
-- Enhanced presentation attack detection (dual-frame temporal micro-motion verification).
-
-## [1.0.2] - 2026-11-18
-### Added
-- Added `CHANGELOG.md` to package files.
-- Updated `package.json` "files" field to include `CHANGELOG.md`.
 
 ## [1.0.1] - 2026-11-16
 ### Fixed
 - Resolved import errors by adding `.js` extensions for ESM compatibility.
-- Updated README with npm and GitHub install instructions.
 - Published package to npm under `@karalasoft/face-attendance-kiosk`.
-
-## [0.0.0-stage] - 2026-11-14
-### Initial placeholder version (not intended for public use).

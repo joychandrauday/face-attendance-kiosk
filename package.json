@@ -1,8 +1,8 @@
 {
   "name": "@karalasoft/face-attendance-kiosk",
-  "version": "1.2.1",
+  "version": "1.3.1",
   "type": "module",
-  "description": "Zero-overhead React / Next.js SDK for SureClock Biometric Face Attendance Kiosks",
+  "description": "Enterprise React / Next.js Biometric Face Attendance, Multi-Angle Enrollment & Analytics SDK for SureClock",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -31,6 +31,8 @@
     "face-attendance",
     "kiosk",
     "biometric",
+    "face-recognition",
+    "multi-angle",
     "karalasoft",
     "sureclock"
   ],
@@ -39,6 +41,9 @@
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
+  },
+  "dependencies": {
+    "recharts": "^2.15.4"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",

@@ -1,6 +1,7 @@
 import React from "react";
 export type KioskTheme = "dark" | "light" | "transparent";
 export type PunchDirection = "AUTO" | "IN" | "OUT";
+export type EnrollmentAngle = "left" | "right" | "front";
 export interface AttendanceSuccessResult {
     match: boolean;
     employee_id: string;
@@ -15,6 +16,7 @@ export interface EnrollmentSuccessResult {
     employee_id: string;
     workspace_id: string;
     message: string;
+    angles_captured?: string[];
 }
 export interface KioskCustomStyles {
     container?: React.CSSProperties;
@@ -23,6 +25,8 @@ export interface KioskCustomStyles {
     button?: React.CSSProperties;
     hud?: React.CSSProperties;
     overlay?: React.CSSProperties;
+    card?: React.CSSProperties;
+    table?: React.CSSProperties;
 }
 export interface FaceAttendanceKioskProps {
     apiKey?: string;
@@ -76,6 +80,21 @@ export interface FaceEnrollmentProps {
     hideHeader?: boolean;
     title?: string;
     className?: string;
+    /** Enable sound chime on angle captures (default: true) */
+    enableSound?: boolean;
     onSuccess?: (result: EnrollmentSuccessResult) => void;
     onError?: (errorMessage: string) => void;
+    onAngleComplete?: (angle: EnrollmentAngle, index: number, total: number) => void;
+}
+export interface SureClockManagerProps {
+    apiKey?: string;
+    api_key?: string;
+    workspaceId?: string;
+    workspace_id?: string;
+    apiUrl?: string;
+    theme?: KioskTheme;
+    styles?: KioskCustomStyles;
+    className?: string;
+    initialTab?: "employees" | "faces" | "analytics";
+    title?: string;
 }
