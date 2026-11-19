@@ -4,18 +4,25 @@ Enterprise-grade, zero-overhead React & Next.js biometric attendance, multi-angl
 
 ---
 
-## What's New in v1.3.0
+## What's New in v1.3.4
 
-1. **Automated Hands-Free Multi-Angle Enrollment (`<FaceEnrollment />`)**:
-   * **Zero Manual Clicks**: The system automatically captures the headshot once optimal centering, lighting, and stillness are detected.
-   * **Sequential Progression**: Seamlessly guides the user through **Left ➔ Right ➔ Front**.
-   * **3D Head Rotation Animation**: An animated face perspective tilt (`rotateY`) and guidance HUD clearly instruct the user how to turn their head.
-   * **Real-Time Accuracy Tuning**: Includes ambient luminance gating, high-frequency sharpness checks, and motion stability tracking with a circular countdown ring.
+1. **3-Phase Intentional Enrollment Flow (`<FaceEnrollment />`)**:
+   * **No Premature Camera Mount**: Camera permissions and video hardware are **never** initialized on mount. The camera only turns on when the user inputs their details and explicitly clicks **"Open Camera & Begin Scan"**.
+   * **Phase 1: Identity & Profile Details**: Clean form collecting `Employee ID` and `Full Name` with validation.
+   * **Phase 2: Multi-Angle Scan Viewfinder**: Guided hands-free capture cycling through **Front ➔ Turn Left ➔ Turn Right** with 3D perspective animations, dynamic head turn indicator HUD, and real-time motion stability gating (`motionDelta < 14.0`).
+   * **Phase 3: Biometric Certificate**: Celebratory completion screen presenting verified status, 128D mathematical token preview, captured angle badges, and 1-click "Enroll Next Employee" reset.
 
-2. **Unified In-SDK Biometric Hub & Analytics (`<SureClockManager />`)**:
+2. **1:N Anti-Duplicate Biometric Fraud Protection**:
+   * **75% Cosine Similarity Floor**: Before enrolling any vector, the engine verifies the face against all existing employees in the workspace.
+   * **Automatic Purge & Rollback**: If a match exceeding 75% similarity is found under another employee ID, the engine returns an HTTP 409 `DuplicateFaceError` conflict and automatically rolls back any partial angle registrations to prevent ghost employee fraud.
+
+3. **Multi-Angle Cloudinary CDN Storage**:
+   * Multi-angle high-resolution crops are stored in tenant-isolated Cloudinary paths (`sureclock/{workspace_id}/...`) for visual HR audit trails and compliance.
+
+4. **Unified In-SDK Biometric Hub & Analytics (`<SureClockManager />`)**:
    * **No Separate Admin Panel**: Drop full biometric administration and real-time reporting directly into your application.
-   * **Employee Directory**: Searchable list of registered staff, GDPR biometric vector purge, and 1-click multi-angle enrollment.
-   * **Biometric Faces Repository**: Inspect 128D mathematical vectors and angles captured.
+   * **Employee Directory**: Searchable list of registered staff with employee names, 1-click modal enrollment, and GDPR biometric vector erasure.
+   * **Biometric Faces Repository**: Inspect 128D mathematical vectors and multi-angle thumbnails.
    * **Interactive Analytics & Charts**: Embedded **Recharts** displaying hourly attendance punch traffic, on-duty KPIs, and a live verification audit log stream.
 
 ---
@@ -62,9 +69,9 @@ export default function AdminPage() {
 
 ---
 
-### 2. Automated Multi-Angle Face Enrollment (`<FaceEnrollment />`)
+### 2. Multi-Angle Face Enrollment (`<FaceEnrollment />`)
 
-Hands-free 3D guided multi-angle face enrollment. Automatically registers the **Left**, **Right**, and **Front** angles when the employee is centered and steady:
+Interactive 3-phase guided face enrollment. Zero camera permissions on mount—camera opens only after clicking "Open Camera & Begin Scan":
 
 ```tsx
 'use client';
@@ -78,10 +85,11 @@ export default function EnrollmentPage() {
         apiKey="sk_live_YOUR_SECRET_KEY"
         workspaceId="showroom-dhaka"
         employeeId="EMP_0412"
+        employeeName="John Doe"
         theme="dark"
         enableSound={true}
         onSuccess={(result) => {
-          console.log(`Successfully enrolled all angles for ${result.employee_id}!`);
+          console.log(`Successfully enrolled all angles for ${result.employee_name} (${result.employee_id})!`);
         }}
         onError={(err) => {
           console.error('Enrollment error:', err);
@@ -111,7 +119,7 @@ export default function KioskPage() {
         workspaceId="showroom-dhaka"
         theme="dark"
         onSuccess={(result) => {
-          console.log(`Verified ${result.employee_id} (${result.punch_type})`);
+          console.log(`Verified ${result.employee_name || result.employee_id} (${result.punch_type})`);
         }}
         onError={(err) => {
           console.warn('Verification failed:', err);
@@ -145,12 +153,13 @@ export default function KioskPage() {
 | :--- | :--- | :--- | :--- |
 | `apiKey` | `string` | **Required** | Secret key (`sk_live_...`). |
 | `workspaceId` | `string` | **Required** | Workspace tenant slug or UUID. |
-| `employeeId` | `string` | `undefined` | Pre-bound employee ID. If omitted, an ID input field is rendered. |
-| `theme` | `"dark" \| "light" \| "transparent"` | `"dark"` | Theme preset. |
+| `employeeId` | `string` | `undefined` | Pre-bound employee ID. If omitted, an ID input field is rendered in Phase 1. |
+| `employeeName` / `employee_name` | `string` | `undefined` | Pre-bound employee full name. If omitted, a name input field is rendered in Phase 1. |
+| `theme` | `"dark" \| "light" \| "transparent"` | `"dark"` | Theme preset (`"dark"`, `"light"`, `"transparent"`). |
 | `enableSound` | `boolean` | `true` | Plays harmonic audio cues on successful angle capture. |
 | `hideHeader` | `boolean` | `false` | Hides default top title bar. |
 | `onSuccess` | `(result: EnrollmentSuccessResult) => void` | `undefined` | Callback fired when all 3 angles are registered. |
-| `onError` | `(errorMessage: string) => void` | `undefined` | Callback fired on failure. |
+| `onError` | `(errorMessage: string) => void` | `undefined` | Callback fired on failure (e.g. 409 DuplicateFaceError). |
 | `onAngleComplete` | `(angle: string, index: number, total: number) => void` | `undefined` | Callback fired as each angle succeeds. |
 
 ---
@@ -184,7 +193,7 @@ import {
   fetchAttendanceLogs,
 } from '@karalasoft/face-attendance-kiosk';
 
-// List enrolled employees
+// List enrolled employees (includes employee_name, angle_images, etc.)
 const employees = await fetchEmployees(apiKey, workspaceId);
 
 // Fetch real-time attendance statistics & hourly breakdown
