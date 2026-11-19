@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { EnrollmentAngle, EnrollmentSuccessResult, FaceEnrollmentProps } from "./types.js";
+import { deleteEmployee } from "./api.js";
 
 const ANGLES: EnrollmentAngle[] = ["front", "left", "right"];
 
@@ -266,8 +267,10 @@ export const FaceEnrollment: React.FC<FaceEnrollmentProps> = ({
 
         // 409 Conflict: Biometric face duplicate detected
         if (resp.status === 409 || data.status === "duplicate_detected") {
+          // Defensive rollback: Ensure any partial vectors from earlier angles in this session are purged
+          deleteEmployee(effectiveApiKey, effectiveWorkspaceId, targetEmpId, apiUrl).catch(() => {});
           const matchedId = data.matched_employee_id || "another employee";
-          const conf = data.confidence ? Math.round(data.confidence * 100) : 80;
+          const conf = data.confidence ? Math.round(data.confidence * 100) : 75;
           const conflict: DuplicateConflict = {
             matchedEmployeeId: matchedId,
             confidence: conf,
@@ -338,7 +341,7 @@ export const FaceEnrollment: React.FC<FaceEnrollmentProps> = ({
       if (currentAngleIdx < ANGLES.length - 1) {
         // Advance to next angle
         const nextIdx = currentAngleIdx + 1;
-        setStatusMessage(`Captured ${angleToRegister.toUpperCase()}! Next: Turn to ${ANGLES[nextIdx].toUpperCase()}...`);
+        setStatusMessage(`✓ ${angleToRegister.toUpperCase()} captured! Now turn head slightly to ${ANGLES[nextIdx].toUpperCase()}...`);
         stabilityCounter.current = 0;
         setCenteringProgress(0);
         setIsCentered(false);
@@ -346,7 +349,7 @@ export const FaceEnrollment: React.FC<FaceEnrollmentProps> = ({
         setTimeout(() => {
           setCurrentAngleIdx(nextIdx);
           isCapturingRef.current = false;
-        }, 1100);
+        }, 850);
       } else {
         // All angles complete!
         stopCamera();
@@ -473,9 +476,9 @@ export const FaceEnrollment: React.FC<FaceEnrollmentProps> = ({
         const perceivedYaw = -(rawOffset * 0.7 - lumaDiffRatio * 0.3);
 
         let pose: "left" | "right" | "front" = "front";
-        if (perceivedYaw < -0.08) {
+        if (perceivedYaw < -0.06) {
           pose = "left";
-        } else if (perceivedYaw > 0.08) {
+        } else if (perceivedYaw > 0.06) {
           pose = "right";
         } else {
           pose = "front";
@@ -483,17 +486,17 @@ export const FaceEnrollment: React.FC<FaceEnrollmentProps> = ({
         setDetectedAngle(pose);
 
         // 4. Quality validation and angle match gating
-        if (avgLuma < 35) {
+        if (avgLuma < 30) {
           setQualityText("Low light - Increase lighting");
           setIsCentered(false);
           stabilityCounter.current = 0;
           setCenteringProgress(0);
-        } else if (avgLuma > 240) {
+        } else if (avgLuma > 245) {
           setQualityText("Too bright - Avoid direct glare");
           setIsCentered(false);
           stabilityCounter.current = 0;
           setCenteringProgress(0);
-        } else if (avgClarity < 2.5) {
+        } else if (avgClarity < 2.0) {
           setQualityText("Focusing - Please hold steady");
           setIsCentered(false);
           stabilityCounter.current = 0;
@@ -506,18 +509,18 @@ export const FaceEnrollment: React.FC<FaceEnrollmentProps> = ({
             setIsCentered(false);
 
             if (currentAngle === "front") {
-              setQualityText("Face straight ahead into camera");
+              setQualityText("Face straight into camera");
             } else if (currentAngle === "left") {
               setQualityText("Turn head slightly to your LEFT");
             } else {
               setQualityText("Turn head slightly to your RIGHT");
             }
 
-            const progress = Math.min(100, Math.round((stabilityCounter.current / 7) * 100));
+            const progress = Math.min(100, Math.round((stabilityCounter.current / 6) * 100));
             setCenteringProgress(progress);
           } else {
-            if (motionDelta < 9.5) {
-              stabilityCounter.current = Math.min(10, stabilityCounter.current + 1);
+            if (motionDelta < 14.0) {
+              stabilityCounter.current = Math.min(8, stabilityCounter.current + 1);
               setIsCentered(true);
               setQualityText(`Pose verified: ${currentAngle.toUpperCase()} - Hold steady`);
             } else {
@@ -526,7 +529,7 @@ export const FaceEnrollment: React.FC<FaceEnrollmentProps> = ({
               setQualityText(`Hold still for ${currentAngle.toUpperCase()} capture...`);
             }
 
-            const progress = Math.min(100, Math.round((stabilityCounter.current / 7) * 100));
+            const progress = Math.min(100, Math.round((stabilityCounter.current / 6) * 100));
             setCenteringProgress(progress);
 
             if (progress >= 100 && !isCapturingRef.current) {
