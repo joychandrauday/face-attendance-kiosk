@@ -91,7 +91,7 @@ export const FaceTable: React.FC<FaceTableProps> = ({
             ) : (
               employees.map((emp) => (
                 <option key={emp.employee_id} value={emp.employee_id}>
-                  {emp.employee_id}
+                  {emp.name ? `${emp.name} (${emp.employee_id})` : emp.employee_id}
                 </option>
               ))
             )}

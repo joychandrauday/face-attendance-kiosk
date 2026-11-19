@@ -8,6 +8,7 @@ export interface EmployeeAngleImage {
 
 export interface EnrolledEmployee {
   employee_id: string;
+  name?: string | null;
   workspace_id: string;
   enrolled_at?: string;
   angles?: string[];
@@ -41,6 +42,7 @@ export interface AttendanceLogRecord {
 export interface RegisterFacePayload {
   workspace_id: string;
   employee_id: string;
+  name?: string;
   image_base64: string;
   angle_label?: "left" | "right" | "front" | string;
 }
@@ -48,6 +50,7 @@ export interface RegisterFacePayload {
 export interface RegisterFaceResponse {
   status: string;
   employee_id: string;
+  name?: string | null;
   workspace_id: string;
   message: string;
   image_url?: string | null;

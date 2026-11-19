@@ -14,6 +14,7 @@ export interface AttendanceSuccessResult {
 export interface EnrollmentSuccessResult {
     status: string;
     employee_id: string;
+    employee_name?: string;
     workspace_id: string;
     message: string;
     angles_captured?: string[];
@@ -72,6 +73,8 @@ export interface FaceEnrollmentProps {
     workspace_id?: string;
     employeeId?: string;
     employee_id?: string;
+    employeeName?: string;
+    employee_name?: string;
     apiUrl?: string;
     /** Visual theme preset */
     theme?: KioskTheme;

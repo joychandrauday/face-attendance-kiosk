@@ -47,7 +47,8 @@ export const EmployeeTable = ({ apiKey, workspaceId, apiUrl = "https://api.surec
             setDeletingId(null);
         }
     };
-    const filtered = employees.filter((e) => e.employee_id.toLowerCase().includes(search.toLowerCase()));
+    const filtered = employees.filter((e) => e.employee_id.toLowerCase().includes(search.toLowerCase()) ||
+        (e.name && e.name.toLowerCase().includes(search.toLowerCase())));
     return (React.createElement("div", { style: { width: "100%", color: textPrimary } },
         React.createElement("div", { style: {
                 display: "flex",
@@ -58,7 +59,7 @@ export const EmployeeTable = ({ apiKey, workspaceId, apiUrl = "https://api.surec
                 flexWrap: "wrap",
             } },
             React.createElement("div", { style: { position: "relative", flex: 1, minWidth: "200px" } },
-                React.createElement("input", { type: "text", value: search, onChange: (e) => setSearch(e.target.value), placeholder: "Search employee ID...", style: {
+                React.createElement("input", { type: "text", value: search, onChange: (e) => setSearch(e.target.value), placeholder: "Search employee ID or name...", style: {
                         width: "100%",
                         padding: "8px 12px",
                         borderRadius: "8px",
@@ -112,7 +113,7 @@ export const EmployeeTable = ({ apiKey, workspaceId, apiUrl = "https://api.surec
             React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem" } },
                 React.createElement("thead", null,
                     React.createElement("tr", { style: { borderBottom: `1px solid ${border}`, backgroundColor: isLight ? "#f1f5f9" : "#090d16" } },
-                        React.createElement("th", { style: { padding: "12px 14px", fontWeight: 600, color: textMuted } }, "Employee ID"),
+                        React.createElement("th", { style: { padding: "12px 14px", fontWeight: 600, color: textMuted } }, "Employee"),
                         React.createElement("th", { style: { padding: "12px 14px", fontWeight: 600, color: textMuted } }, "Workspace"),
                         React.createElement("th", { style: { padding: "12px 14px", fontWeight: 600, color: textMuted } }, "Enrolled Date"),
                         React.createElement("th", { style: { padding: "12px 14px", fontWeight: 600, color: textMuted } }, "Biometric Vector"),
@@ -120,7 +121,9 @@ export const EmployeeTable = ({ apiKey, workspaceId, apiUrl = "https://api.surec
                 React.createElement("tbody", null, loading ? (React.createElement("tr", null,
                     React.createElement("td", { colSpan: 5, style: { padding: "28px", textAlign: "center", color: textMuted } }, "Loading enrolled employees..."))) : filtered.length === 0 ? (React.createElement("tr", null,
                     React.createElement("td", { colSpan: 5, style: { padding: "28px", textAlign: "center", color: textMuted } }, search ? `No employees matching "${search}"` : "No enrolled employees found in this workspace."))) : (filtered.map((emp) => (React.createElement("tr", { key: emp.employee_id, style: { borderBottom: `1px solid ${border}` } },
-                    React.createElement("td", { style: { padding: "12px 14px", fontWeight: 600, fontFamily: "monospace" } }, emp.employee_id),
+                    React.createElement("td", { style: { padding: "12px 14px" } },
+                        React.createElement("div", { style: { fontWeight: 600, color: textPrimary } }, emp.name || "—"),
+                        React.createElement("div", { style: { fontSize: "0.75rem", fontFamily: "monospace", color: textMuted } }, emp.employee_id)),
                     React.createElement("td", { style: { padding: "12px 14px", color: textMuted } }, emp.workspace_id),
                     React.createElement("td", { style: { padding: "12px 14px", color: textMuted } }, emp.enrolled_at ? new Date(emp.enrolled_at).toLocaleDateString() : "Active"),
                     React.createElement("td", { style: { padding: "12px 14px" } },

@@ -67,7 +67,8 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   };
 
   const filtered = employees.filter((e) =>
-    e.employee_id.toLowerCase().includes(search.toLowerCase())
+    e.employee_id.toLowerCase().includes(search.toLowerCase()) ||
+    (e.name && e.name.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -88,7 +89,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search employee ID..."
+            placeholder="Search employee ID or name..."
             style={{
               width: "100%",
               padding: "8px 12px",
@@ -173,7 +174,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
         <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${border}`, backgroundColor: isLight ? "#f1f5f9" : "#090d16" }}>
-              <th style={{ padding: "12px 14px", fontWeight: 600, color: textMuted }}>Employee ID</th>
+              <th style={{ padding: "12px 14px", fontWeight: 600, color: textMuted }}>Employee</th>
               <th style={{ padding: "12px 14px", fontWeight: 600, color: textMuted }}>Workspace</th>
               <th style={{ padding: "12px 14px", fontWeight: 600, color: textMuted }}>Enrolled Date</th>
               <th style={{ padding: "12px 14px", fontWeight: 600, color: textMuted }}>Biometric Vector</th>
@@ -196,8 +197,9 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
             ) : (
               filtered.map((emp) => (
                 <tr key={emp.employee_id} style={{ borderBottom: `1px solid ${border}` }}>
-                  <td style={{ padding: "12px 14px", fontWeight: 600, fontFamily: "monospace" }}>
-                    {emp.employee_id}
+                  <td style={{ padding: "12px 14px" }}>
+                    <div style={{ fontWeight: 600, color: textPrimary }}>{emp.name || "—"}</div>
+                    <div style={{ fontSize: "0.75rem", fontFamily: "monospace", color: textMuted }}>{emp.employee_id}</div>
                   </td>
                   <td style={{ padding: "12px 14px", color: textMuted }}>
                     {emp.workspace_id}

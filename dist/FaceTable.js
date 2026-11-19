@@ -56,7 +56,7 @@ export const FaceTable = ({ apiKey, workspaceId, selectedEmployeeId, apiUrl = "h
                         fontSize: "0.85rem",
                         fontFamily: "monospace",
                         outline: "none",
-                    } }, employees.length === 0 ? (React.createElement("option", { value: "" }, "No employees found")) : (employees.map((emp) => (React.createElement("option", { key: emp.employee_id, value: emp.employee_id }, emp.employee_id)))))),
+                    } }, employees.length === 0 ? (React.createElement("option", { value: "" }, "No employees found")) : (employees.map((emp) => (React.createElement("option", { key: emp.employee_id, value: emp.employee_id }, emp.name ? `${emp.name} (${emp.employee_id})` : emp.employee_id)))))),
             activeEmpId && onReEnroll && (React.createElement("button", { type: "button", onClick: () => onReEnroll(activeEmpId), style: {
                     padding: "8px 14px",
                     borderRadius: "8px",
