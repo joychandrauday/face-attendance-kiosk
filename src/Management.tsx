@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { AnalyticsDashboard } from "./AnalyticsDashboard.js";
 import { EmployeeTable } from "./EmployeeTable.js";
 import { FaceEnrollment } from "./Enrollment.js";
+import { FaceAttendanceKiosk } from "./FaceAttendanceKiosk.js";
 import { FaceTable } from "./FaceTable.js";
 import { KioskTheme, SureClockManagerProps } from "./types.js";
 
@@ -16,13 +17,17 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
   theme = "dark",
   styles = {},
   className = "",
-  initialTab = "employees",
+  initialTab = "kiosk",
   title = "SureClock Biometric Hub",
+  showKioskTab = true,
+  kioskProps = {},
+  onAttendance,
+  onEnrollment,
 }) => {
   const effectiveApiKey = apiKey || api_key || "";
   const effectiveWorkspaceId = workspaceId || workspace_id || "";
 
-  const [activeTab, setActiveTab] = useState<"employees" | "faces" | "analytics">(initialTab);
+  const [activeTab, setActiveTab] = useState<"kiosk" | "employees" | "faces" | "analytics">(initialTab);
   const [selectedEmpForFaces, setSelectedEmpForFaces] = useState<string>("");
   const [showEnrollModal, setShowEnrollModal] = useState<boolean>(false);
   const [enrollTargetEmpId, setEnrollTargetEmpId] = useState<string>("");
@@ -117,8 +122,29 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
             borderRadius: "10px",
             padding: "4px",
             border: `1px solid ${themeTokens.border}`,
+            flexWrap: "wrap",
+            gap: "2px",
           }}
         >
+          {showKioskTab && (
+            <button
+              type="button"
+              onClick={() => setActiveTab("kiosk")}
+              style={{
+                padding: "6px 14px",
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: activeTab === "kiosk" ? themeTokens.tabActive : "transparent",
+                color: activeTab === "kiosk" ? "#ffffff" : themeTokens.textMuted,
+                fontSize: "0.82rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+            >
+              📸 Attendance Kiosk
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setActiveTab("employees")}
@@ -174,6 +200,26 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
       </div>
 
       {/* Tab Contents */}
+      {activeTab === "kiosk" && showKioskTab && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "12px 0" }}>
+          <div style={{ maxWidth: "480px", width: "100%", margin: "0 auto" }}>
+            <FaceAttendanceKiosk
+              apiKey={effectiveApiKey}
+              workspaceId={effectiveWorkspaceId}
+              apiUrl={apiUrl}
+              theme={theme}
+              buttonLabel="Verify Attendance"
+              enableSound={true}
+              mirror={true}
+              onSuccess={(result) => {
+                if (onAttendance) onAttendance(result);
+              }}
+              {...kioskProps}
+            />
+          </div>
+        </div>
+      )}
+
       {activeTab === "employees" && (
         <EmployeeTable
           apiKey={effectiveApiKey}
@@ -249,7 +295,8 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
               employeeId={enrollTargetEmpId}
               apiUrl={apiUrl}
               theme={theme}
-              onSuccess={() => {
+              onSuccess={(result) => {
+                if (onEnrollment) onEnrollment(result);
                 setTimeout(() => {
                   setShowEnrollModal(false);
                 }, 2000);

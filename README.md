@@ -1,29 +1,33 @@
 # @karalasoft/face-attendance-kiosk
 
-Enterprise-grade, zero-overhead React & Next.js biometric attendance, multi-angle enrollment, and embedded management SDK for **SureClock**. Designed to drop seamlessly into any CRM, ERP, HR portal, or dedicated physical kiosk tablet—with **no separate admin panel required**.
+Enterprise-grade, zero-overhead React & Next.js biometric attendance, multi-angle enrollment, and embedded management SDK for **SureClock**. Designed to drop seamlessly into any CRM, ERP, HR portal, or dedicated physical kiosk tablet—with **zero API calls required** and **no separate admin panel needed**.
 
 ---
 
-## What's New in v1.3.4
+## What's New in v1.3.5
 
-1. **3-Phase Intentional Enrollment Flow (`<FaceEnrollment />`)**:
+1. **Complete All-In-One "Connect & Go" Solution (`<SureClockManager />`)**:
+   * **Live Attendance Kiosk Tab**: `<SureClockManager />` now embeds the live attendance clock-in camera terminal directly as Tab 1. Drop one component into your application and immediately receive the **full enterprise solution**:
+     - 📸 **Live Kiosk**: Touchless glance facial clock-in/out station with audio chime & HUD.
+     - 👥 **Employee Directory**: Real-time staff list with search and 1-click biometric deletion.
+     - 👤 **Biometric Faces**: Inspect multi-angle Cloudinary CDN photos and 128D mathematical vectors.
+     - 📊 **Analytics & Charts**: Live work hours, confidence rate, hourly breakdown charts, and real-time punch logs.
+     - ➕ **Multi-Angle Enrollment Modal**: 3-phase guided registration (Front ➔ Left ➔ Right).
+   * **Zero User-Written API Calls**: All biometric inference, vector storage, downscaling, Cloudinary sync, and database queries are handled internally by the SDK.
+   * **Raw APIs for Customization**: For teams building custom headless mobile apps or custom microservices, the raw REST endpoints and typed SDK functions (`api.fetchEmployees`, `api.deleteEmployee`, etc.) remain fully accessible.
+
+2. **3-Phase Intentional Enrollment Flow (`<FaceEnrollment />`)**:
    * **No Premature Camera Mount**: Camera permissions and video hardware are **never** initialized on mount. The camera only turns on when the user inputs their details and explicitly clicks **"Open Camera & Begin Scan"**.
    * **Phase 1: Identity & Profile Details**: Clean form collecting `Employee ID` and `Full Name` with validation.
    * **Phase 2: Multi-Angle Scan Viewfinder**: Guided hands-free capture cycling through **Front ➔ Turn Left ➔ Turn Right** with 3D perspective animations, dynamic head turn indicator HUD, and real-time motion stability gating (`motionDelta < 14.0`).
    * **Phase 3: Biometric Certificate**: Celebratory completion screen presenting verified status, 128D mathematical token preview, captured angle badges, and 1-click "Enroll Next Employee" reset.
 
-2. **1:N Anti-Duplicate Biometric Fraud Protection**:
+3. **1:N Anti-Duplicate Biometric Fraud Protection**:
    * **75% Cosine Similarity Floor**: Before enrolling any vector, the engine verifies the face against all existing employees in the workspace.
    * **Automatic Purge & Rollback**: If a match exceeding 75% similarity is found under another employee ID, the engine returns an HTTP 409 `DuplicateFaceError` conflict and automatically rolls back any partial angle registrations to prevent ghost employee fraud.
 
-3. **Multi-Angle Cloudinary CDN Storage**:
+4. **Multi-Angle Cloudinary CDN Storage**:
    * Multi-angle high-resolution crops are stored in tenant-isolated Cloudinary paths (`sureclock/{workspace_id}/...`) for visual HR audit trails and compliance.
-
-4. **Unified In-SDK Biometric Hub & Analytics (`<SureClockManager />`)**:
-   * **No Separate Admin Panel**: Drop full biometric administration and real-time reporting directly into your application.
-   * **Employee Directory**: Searchable list of registered staff with employee names, 1-click modal enrollment, and GDPR biometric vector erasure.
-   * **Biometric Faces Repository**: Inspect 128D mathematical vectors and multi-angle thumbnails.
-   * **Interactive Analytics & Charts**: Embedded **Recharts** displaying hourly attendance punch traffic, on-duty KPIs, and a live verification audit log stream.
 
 ---
 
@@ -60,7 +64,7 @@ export default function AdminPage() {
         apiKey="sk_live_YOUR_SECRET_KEY"
         workspaceId="showroom-dhaka"
         theme="dark"
-        initialTab="analytics" // "employees" | "faces" | "analytics"
+        initialTab="kiosk" // "kiosk" | "employees" | "faces" | "analytics"
       />
     </div>
   );
@@ -138,12 +142,15 @@ export default function KioskPage() {
 
 | Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `apiKey` | `string` | **Required** | Secret key (`sk_live_...`) required for administrative data management. |
+| `apiKey` | `string` | **Required** | Secret key (`sk_live_...`) for full management or publishable key (`pk_live_...`) for kiosk. |
 | `workspaceId` | `string` | **Required** | Target workspace tenant slug or UUID. |
-| `initialTab` | `"employees" \| "faces" \| "analytics"` | `"employees"` | Initial active view. |
+| `initialTab` | `"kiosk" \| "employees" \| "faces" \| "analytics"` | `"kiosk"` | Initial active view. Defaults to the Live Kiosk. |
+| `showKioskTab` | `boolean` | `true` | Whether to display the live attendance camera station tab. |
 | `theme` | `"dark" \| "light" \| "transparent"` | `"dark"` | Visual styling preset. |
 | `apiUrl` | `string` | `"https://api.sureclock.karalasoft.com"` | Biometric engine API origin. |
 | `styles` | `KioskCustomStyles` | `{}` | Custom styling overrides for container and header. |
+| `onAttendance` | `(result: AttendanceSuccessResult) => void` | `undefined` | Callback fired when an employee punches in/out via the embedded Kiosk. |
+| `onEnrollment` | `(result: EnrollmentSuccessResult) => void` | `undefined` | Callback fired when a staff member completes multi-angle enrollment. |
 
 ---
 

@@ -128,6 +128,10 @@ export interface SureClockManagerProps {
   theme?: KioskTheme;
   styles?: KioskCustomStyles;
   className?: string;
-  initialTab?: "employees" | "faces" | "analytics";
+  initialTab?: "kiosk" | "employees" | "faces" | "analytics";
   title?: string;
+  showKioskTab?: boolean;
+  kioskProps?: Partial<FaceAttendanceKioskProps>;
+  onAttendance?: (result: AttendanceSuccessResult) => void;
+  onEnrollment?: (result: EnrollmentSuccessResult) => void;
 }
