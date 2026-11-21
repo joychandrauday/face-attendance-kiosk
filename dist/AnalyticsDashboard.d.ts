@@ -5,6 +5,7 @@ interface AnalyticsDashboardProps {
     workspaceId: string;
     apiUrl?: string;
     theme?: KioskTheme;
+    timezone?: string;
 }
 export declare const AnalyticsDashboard: React.FC<AnalyticsDashboardProps>;
 export {};

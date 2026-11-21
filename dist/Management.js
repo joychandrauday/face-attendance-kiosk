@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AnalyticsDashboard } from "./AnalyticsDashboard.js";
 import { AttendanceLogs } from "./AttendanceLogs.js";
 import { EmployeeTable } from "./EmployeeTable.js";
@@ -7,14 +7,31 @@ import { FaceEnrollment } from "./Enrollment.js";
 import { FaceAttendanceKiosk } from "./FaceAttendanceKiosk.js";
 import { FaceTable } from "./FaceTable.js";
 import { SureClockSettings } from "./Settings.js";
-export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, apiUrl = "https://api.sureclock.karalasoft.com", theme = "dark", styles = {}, className = "", initialTab = "kiosk", title = "SureClock Biometric Hub", showKioskTab = true, showSettingsTab = true, kioskProps = {}, onAttendance, onEnrollment, }) => {
+import { DEFAULT_TIMEZONE } from "./utils/time.js";
+import { fetchWorkspaceSettings } from "./api.js";
+export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, apiUrl = "https://api.sureclock.karalasoft.com", theme = "dark", timezone: propTimezone, styles = {}, className = "", initialTab = "kiosk", title = "SureClock Biometric Hub", showKioskTab = true, showSettingsTab = true, kioskProps = {}, onAttendance, onEnrollment, }) => {
     const effectiveApiKey = apiKey || api_key || "";
     const effectiveWorkspaceId = workspaceId || workspace_id || "";
     const [activeTab, setActiveTab] = useState(initialTab);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [timezone, setTimezone] = useState(propTimezone || DEFAULT_TIMEZONE);
     const [selectedEmpForFaces, setSelectedEmpForFaces] = useState("");
     const [showEnrollModal, setShowEnrollModal] = useState(false);
     const [enrollTargetEmpId, setEnrollTargetEmpId] = useState("");
+    useEffect(() => {
+        if (propTimezone) {
+            setTimezone(propTimezone);
+            return;
+        }
+        if (!effectiveApiKey || !effectiveWorkspaceId)
+            return;
+        fetchWorkspaceSettings(effectiveApiKey, effectiveWorkspaceId, apiUrl)
+            .then((data) => {
+            if (data.timezone)
+                setTimezone(data.timezone);
+        })
+            .catch(() => { });
+    }, [effectiveApiKey, effectiveWorkspaceId, apiUrl, propTimezone]);
     const isLight = theme === "light";
     const isTransparent = theme === "transparent";
     const themeTokens = {
@@ -154,16 +171,21 @@ export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, a
                     } }, "\u2699\uFE0F Settings")))),
         activeTab === "kiosk" && showKioskTab && (React.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "12px 0" } },
             React.createElement("div", { style: { maxWidth: "480px", width: "100%", margin: "0 auto" } },
-                React.createElement(FaceAttendanceKiosk, { apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme, buttonLabel: "Verify Attendance", enableSound: true, mirror: true, onSuccess: (result) => {
+                React.createElement(FaceAttendanceKiosk, { apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme, timezone: timezone, buttonLabel: "Verify Attendance", enableSound: true, mirror: true, onSuccess: (result) => {
                         setRefreshKey((k) => k + 1);
                         if (onAttendance)
                             onAttendance(result);
                     }, ...kioskProps })))),
-        activeTab === "logs" && (React.createElement(AttendanceLogs, { key: `logs-${refreshKey}`, apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme, autoRefresh: true })),
+        activeTab === "logs" && (React.createElement(AttendanceLogs, { key: `logs-${refreshKey}-${timezone}`, apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme, timezone: timezone, autoRefresh: true })),
         activeTab === "employees" && (React.createElement(EmployeeTable, { apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme, onEnrollNew: () => handleOpenEnroll(), onSelectEmployee: handleSelectEmployeeForFaces })),
         activeTab === "faces" && (React.createElement(FaceTable, { apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, selectedEmployeeId: selectedEmpForFaces, apiUrl: apiUrl, theme: theme, onReEnroll: (empId) => handleOpenEnroll(empId) })),
-        activeTab === "analytics" && (React.createElement(AnalyticsDashboard, { key: `analytics-${refreshKey}`, apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme })),
-        activeTab === "settings" && showSettingsTab && (React.createElement(SureClockSettings, { key: `settings-${refreshKey}`, apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme, onSave: () => setRefreshKey((k) => k + 1) })),
+        activeTab === "analytics" && (React.createElement(AnalyticsDashboard, { key: `analytics-${refreshKey}-${timezone}`, apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme, timezone: timezone })),
+        activeTab === "settings" && showSettingsTab && (React.createElement(SureClockSettings, { key: `settings-${refreshKey}`, apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme, timezone: timezone, onSave: (updated) => {
+                if (updated?.timezone) {
+                    setTimezone(updated.timezone);
+                }
+                setRefreshKey((k) => k + 1);
+            } })),
         showEnrollModal && (React.createElement("div", { style: {
                 position: "fixed",
                 inset: 0,

@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState, useMemo } from "react";
 import { fetchAttendanceLogs } from "./api.js";
-export const AttendanceLogs = ({ apiKey, workspaceId, apiUrl = "https://api.sureclock.karalasoft.com", theme = "dark", limit = 50, autoRefresh = true, refreshIntervalMs = 12000, className = "", }) => {
+import { DEFAULT_TIMEZONE, format12HourTime, formatDate } from "./utils/time.js";
+export const AttendanceLogs = ({ apiKey, workspaceId, apiUrl = "https://api.sureclock.karalasoft.com", theme = "dark", timezone = DEFAULT_TIMEZONE, limit = 50, autoRefresh = true, refreshIntervalMs = 12000, className = "", }) => {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -64,16 +65,10 @@ export const AttendanceLogs = ({ apiKey, workspaceId, apiUrl = "https://api.sure
         });
     }, [logs, search, filterType]);
     const formatTimestamp = (ts) => {
-        try {
-            const d = new Date(ts);
-            return {
-                date: d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }),
-                time: d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }),
-            };
-        }
-        catch {
-            return { date: ts, time: "" };
-        }
+        return {
+            date: formatDate(ts, timezone),
+            time: format12HourTime(ts, timezone, true),
+        };
     };
     return (React.createElement("div", { className: `sureclock-attendance-logs ${className}`, style: {
             width: "100%",
@@ -129,7 +124,7 @@ export const AttendanceLogs = ({ apiKey, workspaceId, apiUrl = "https://api.sure
                         fontFamily: "monospace",
                     } },
                     "Updated ",
-                    lastUpdated.toLocaleTimeString()),
+                    format12HourTime(lastUpdated, timezone, true)),
                 React.createElement("button", { type: "button", onClick: () => loadLogs(false), disabled: loading, style: {
                         padding: "7px 12px",
                         borderRadius: "8px",

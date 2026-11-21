@@ -5,6 +5,7 @@ export interface AttendanceLogsProps {
     workspaceId: string;
     apiUrl?: string;
     theme?: KioskTheme;
+    timezone?: string;
     limit?: number;
     autoRefresh?: boolean;
     refreshIntervalMs?: number;

@@ -82,6 +82,9 @@ export interface FaceAttendanceKioskProps {
   /** Enable hands-free continuous presence scan (default: false) */
   autoScan?: boolean;
 
+  /** Workspace timezone for 12-hour clock and timestamps (e.g. "Asia/Dhaka"). Default: "Asia/Dhaka" */
+  timezone?: string;
+
   /** Callbacks */
   onSuccess?: (result: AttendanceSuccessResult) => void;
   onError?: (errorMessage: string) => void;
@@ -128,6 +131,7 @@ export interface SureClockManagerProps {
   workspace_id?: string;
   apiUrl?: string;
   theme?: KioskTheme;
+  timezone?: string;
   styles?: KioskCustomStyles;
   className?: string;
   initialTab?: "kiosk" | "logs" | "employees" | "faces" | "analytics" | "settings";
@@ -148,11 +152,13 @@ export interface SureClockSettingsProps {
   secretKey?: string;
   apiUrl?: string;
   theme?: KioskTheme;
+  timezone?: string;
   styles?: KioskCustomStyles;
   className?: string;
   onSave?: (settings: {
     name?: string;
     similarity_threshold?: number;
+    timezone?: string;
     audioChime?: boolean;
     shiftGuard?: boolean;
   }) => void;

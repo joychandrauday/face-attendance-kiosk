@@ -21,10 +21,21 @@ export {
   registerFaceAngle,
   fetchAttendanceStats,
   fetchAttendanceLogs,
+  fetchEmployeeDailyHours,
   fetchWorkspaceSettings,
   updateWorkspaceSettings,
   checkEngineHealth,
 } from "./api.js";
+
+export {
+  DEFAULT_TIMEZONE,
+  TIMEZONE_OPTIONS,
+  format12HourTime,
+  formatDate,
+  format12HourDateTime,
+  formatHourlyLabel,
+} from "./utils/time.js";
+export type { TimezoneOption } from "./utils/time.js";
 
 export type {
   AttendanceSuccessResult,
@@ -43,6 +54,7 @@ export type {
   EnrolledEmployee,
   AttendanceStatResult,
   AttendanceLogRecord,
+  EmployeeDailyHoursRecord,
   RegisterFacePayload,
   RegisterFaceResponse,
   WorkspaceSettings,

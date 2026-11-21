@@ -8,6 +8,7 @@ import {
 } from "./types.js";
 import { cropAlignedFace, computeFrameMicroMotion } from "./faceDetector.js";
 import { ConfirmModal } from "./components/Modal.js";
+import { DEFAULT_TIMEZONE, format12HourTime } from "./utils/time.js";
 
 function playVerificationChime() {
   try {
@@ -75,6 +76,7 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
   enableSound = true,
   mirror = true,
   autoScan = false,
+  timezone = DEFAULT_TIMEZONE,
   onSuccess,
   onError,
   onStatusChange,
@@ -100,23 +102,15 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
   const canvas2Ref = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Live Digital Clock (high density tabular-nums)
+  // Live Digital Clock (high density tabular-nums in 12-hour format)
   useEffect(() => {
     const updateTime = () => {
-      const now = new Date();
-      setCurrentTime(
-        now.toLocaleTimeString(undefined, {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false,
-        })
-      );
+      setCurrentTime(format12HourTime(new Date(), timezone, true));
     };
     updateTime();
     const timer = setInterval(updateTime, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [timezone]);
 
   // Sync punchType prop changes
   useEffect(() => {

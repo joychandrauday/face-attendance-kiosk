@@ -2,13 +2,15 @@
 import React, { useEffect, useState } from "react";
 import { checkEngineHealth, fetchWorkspaceSettings, updateWorkspaceSettings, } from "./api.js";
 import { Toast } from "./components/Modal.js";
-export const SureClockSettings = ({ apiKey, api_key, workspaceId, workspace_id, publishableKey, secretKey, apiUrl = "https://api.sureclock.karalasoft.com", theme = "dark", styles = {}, className = "", onSave, }) => {
+import { DEFAULT_TIMEZONE, TIMEZONE_OPTIONS } from "./utils/time.js";
+export const SureClockSettings = ({ apiKey, api_key, workspaceId, workspace_id, publishableKey, secretKey, apiUrl = "https://api.sureclock.karalasoft.com", theme = "dark", timezone: propTimezone, styles = {}, className = "", onSave, }) => {
     const effectiveApiKey = apiKey || api_key || "";
     const effectiveWorkspaceId = workspaceId || workspace_id || "";
     const effectivePubKey = publishableKey || (effectiveApiKey.startsWith("pk_") ? effectiveApiKey : "");
     const effectiveSecKey = secretKey || (effectiveApiKey.startsWith("sk_") ? effectiveApiKey : "");
     const [workspaceName, setWorkspaceName] = useState("");
     const [threshold, setThreshold] = useState(0.68);
+    const [timezone, setTimezone] = useState(propTimezone || DEFAULT_TIMEZONE);
     const [audioChime, setAudioChime] = useState(true);
     const [shiftGuard, setShiftGuard] = useState(true);
     const [loading, setLoading] = useState(false);
@@ -41,6 +43,8 @@ export const SureClockSettings = ({ apiKey, api_key, workspaceId, workspace_id, 
                     setWorkspaceName(data.name);
                 if (typeof data.similarity_threshold === "number")
                     setThreshold(data.similarity_threshold);
+                if (data.timezone)
+                    setTimezone(data.timezone);
             }
             catch (_) {
                 // Fallback to defaults if workspace endpoint is newly provisioned
@@ -78,12 +82,14 @@ export const SureClockSettings = ({ apiKey, api_key, workspaceId, workspace_id, 
                 await updateWorkspaceSettings(effectiveApiKey, effectiveWorkspaceId, {
                     name: workspaceName.trim() || undefined,
                     similarity_threshold: threshold,
+                    timezone,
                 }, apiUrl);
             }
             if (onSave) {
                 onSave({
                     name: workspaceName,
                     similarity_threshold: threshold,
+                    timezone,
                     audioChime,
                     shiftGuard,
                 });
@@ -154,7 +160,28 @@ export const SureClockSettings = ({ apiKey, api_key, workspaceId, workspace_id, 
                                 fontSize: "0.85rem",
                                 boxSizing: "border-box",
                                 outline: "none",
-                            } })))),
+                            } })),
+                    React.createElement("div", null,
+                        React.createElement("label", { style: {
+                                display: "block",
+                                fontSize: "0.78rem",
+                                fontWeight: 600,
+                                color: themeTokens.textMuted,
+                                marginBottom: "6px",
+                            } }, "Workspace Timezone (Default: Bangladesh / Asia/Dhaka)"),
+                        React.createElement("select", { value: timezone, onChange: (e) => setTimezone(e.target.value), disabled: loading, style: {
+                                width: "100%",
+                                padding: "10px 14px",
+                                borderRadius: "8px",
+                                border: `1px solid ${themeTokens.border}`,
+                                backgroundColor: themeTokens.inputBg,
+                                color: themeTokens.textPrimary,
+                                fontSize: "0.85rem",
+                                boxSizing: "border-box",
+                                outline: "none",
+                                cursor: "pointer",
+                            } }, TIMEZONE_OPTIONS.map((opt) => (React.createElement("option", { key: opt.value, value: opt.value }, opt.label)))),
+                        React.createElement("p", { style: { margin: "6px 0 0 0", fontSize: "0.72rem", color: themeTokens.textMuted } }, "Controls 12-hour clock tickers, verification timestamps, and shift attendance summaries.")))),
             React.createElement("div", { style: {
                     backgroundColor: themeTokens.surface,
                     border: `1px solid ${themeTokens.border}`,

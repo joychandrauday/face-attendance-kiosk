@@ -9,6 +9,7 @@ import {
 } from "./api.js";
 import { Toast } from "./components/Modal.js";
 import { KioskTheme, SureClockSettingsProps } from "./types.js";
+import { DEFAULT_TIMEZONE, TIMEZONE_OPTIONS } from "./utils/time.js";
 
 export const SureClockSettings: React.FC<SureClockSettingsProps> = ({
   apiKey,
@@ -19,6 +20,7 @@ export const SureClockSettings: React.FC<SureClockSettingsProps> = ({
   secretKey,
   apiUrl = "https://api.sureclock.karalasoft.com",
   theme = "dark",
+  timezone: propTimezone,
   styles = {},
   className = "",
   onSave,
@@ -30,6 +32,7 @@ export const SureClockSettings: React.FC<SureClockSettingsProps> = ({
 
   const [workspaceName, setWorkspaceName] = useState<string>("");
   const [threshold, setThreshold] = useState<number>(0.68);
+  const [timezone, setTimezone] = useState<string>(propTimezone || DEFAULT_TIMEZONE);
   const [audioChime, setAudioChime] = useState<boolean>(true);
   const [shiftGuard, setShiftGuard] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
@@ -66,6 +69,7 @@ export const SureClockSettings: React.FC<SureClockSettingsProps> = ({
         const data = await fetchWorkspaceSettings(effectiveApiKey, effectiveWorkspaceId, apiUrl);
         if (data.name) setWorkspaceName(data.name);
         if (typeof data.similarity_threshold === "number") setThreshold(data.similarity_threshold);
+        if (data.timezone) setTimezone(data.timezone);
       } catch (_) {
         // Fallback to defaults if workspace endpoint is newly provisioned
       } finally {
@@ -104,6 +108,7 @@ export const SureClockSettings: React.FC<SureClockSettingsProps> = ({
           {
             name: workspaceName.trim() || undefined,
             similarity_threshold: threshold,
+            timezone,
           },
           apiUrl
         );
@@ -113,6 +118,7 @@ export const SureClockSettings: React.FC<SureClockSettingsProps> = ({
         onSave({
           name: workspaceName,
           similarity_threshold: threshold,
+          timezone,
           audioChime,
           shiftGuard,
         });
@@ -212,6 +218,46 @@ export const SureClockSettings: React.FC<SureClockSettingsProps> = ({
                   outline: "none",
                 }}
               />
+            </div>
+
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  color: themeTokens.textMuted,
+                  marginBottom: "6px",
+                }}
+              >
+                Workspace Timezone (Default: Bangladesh / Asia/Dhaka)
+              </label>
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                  border: `1px solid ${themeTokens.border}`,
+                  backgroundColor: themeTokens.inputBg,
+                  color: themeTokens.textPrimary,
+                  fontSize: "0.85rem",
+                  boxSizing: "border-box",
+                  outline: "none",
+                  cursor: "pointer",
+                }}
+              >
+                {TIMEZONE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <p style={{ margin: "6px 0 0 0", fontSize: "0.72rem", color: themeTokens.textMuted }}>
+                Controls 12-hour clock tickers, verification timestamps, and shift attendance summaries.
+              </p>
             </div>
           </div>
         </div>

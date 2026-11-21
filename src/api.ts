@@ -157,8 +157,39 @@ export interface WorkspaceSettings {
   workspace_id: string;
   name: string;
   similarity_threshold?: number;
+  timezone?: string;
   enrolled_employees_count?: number;
   created_at?: string;
+}
+
+export interface EmployeeDailyHoursRecord {
+  employee_id: string;
+  employee_name?: string | null;
+  date: string;
+  first_clock_in: string;
+  last_clock_out: string | null;
+  sessions_count: number;
+  total_minutes: number;
+  total_hours: number;
+  has_open_session: boolean;
+}
+
+/** Fetch aggregated day-wise total work hours of employees */
+export async function fetchEmployeeDailyHours(
+  apiKey: string,
+  workspaceId: string,
+  employeeId?: string,
+  startDate?: string,
+  endDate?: string,
+  apiUrl = "https://api.sureclock.karalasoft.com"
+): Promise<EmployeeDailyHoursRecord[]> {
+  const base = apiUrl.replace(/\/$/, "");
+  const params = new URLSearchParams({ workspace_id: workspaceId });
+  if (employeeId) params.append("employee_id", employeeId);
+  if (startDate) params.append("start_date", startDate);
+  if (endDate) params.append("end_date", endDate);
+  const endpoint = `${base}/api/v1/attendance/employee-daily-hours?${params.toString()}`;
+  return await apiRequest<EmployeeDailyHoursRecord[]>(endpoint, apiKey, { method: "GET" });
 }
 
 /** Fetch workspace settings and similarity threshold */
@@ -172,11 +203,11 @@ export async function fetchWorkspaceSettings(
   return await apiRequest<WorkspaceSettings>(endpoint, apiKey, { method: "GET" });
 }
 
-/** Update workspace settings (name and similarity threshold) */
+/** Update workspace settings (name, similarity threshold, and timezone) */
 export async function updateWorkspaceSettings(
   apiKey: string,
   workspaceId: string,
-  payload: { name?: string; similarity_threshold?: number },
+  payload: { name?: string; similarity_threshold?: number; timezone?: string },
   apiUrl = "https://api.sureclock.karalasoft.com"
 ): Promise<WorkspaceSettings> {
   const base = apiUrl.replace(/\/$/, "");

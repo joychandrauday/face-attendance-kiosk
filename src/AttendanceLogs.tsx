@@ -3,12 +3,14 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { AttendanceLogRecord, fetchAttendanceLogs } from "./api.js";
 import { KioskTheme } from "./types.js";
+import { DEFAULT_TIMEZONE, format12HourTime, formatDate } from "./utils/time.js";
 
 export interface AttendanceLogsProps {
   apiKey: string;
   workspaceId: string;
   apiUrl?: string;
   theme?: KioskTheme;
+  timezone?: string;
   limit?: number;
   autoRefresh?: boolean;
   refreshIntervalMs?: number;
@@ -20,6 +22,7 @@ export const AttendanceLogs: React.FC<AttendanceLogsProps> = ({
   workspaceId,
   apiUrl = "https://api.sureclock.karalasoft.com",
   theme = "dark",
+  timezone = DEFAULT_TIMEZONE,
   limit = 50,
   autoRefresh = true,
   refreshIntervalMs = 12000,
@@ -89,15 +92,10 @@ export const AttendanceLogs: React.FC<AttendanceLogsProps> = ({
   }, [logs, search, filterType]);
 
   const formatTimestamp = (ts: string) => {
-    try {
-      const d = new Date(ts);
-      return {
-        date: d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }),
-        time: d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }),
-      };
-    } catch {
-      return { date: ts, time: "" };
-    }
+    return {
+      date: formatDate(ts, timezone),
+      time: format12HourTime(ts, timezone, true),
+    };
   };
 
   return (
@@ -186,7 +184,7 @@ export const AttendanceLogs: React.FC<AttendanceLogsProps> = ({
               fontFamily: "monospace",
             }}
           >
-            Updated {lastUpdated.toLocaleTimeString()}
+            Updated {format12HourTime(lastUpdated, timezone, true)}
           </span>
 
           <button

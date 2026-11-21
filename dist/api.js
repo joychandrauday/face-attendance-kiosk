@@ -60,13 +60,26 @@ export async function fetchAttendanceLogs(apiKey, workspaceId, limit = 50, apiUr
     const endpoint = `${base}/api/v1/attendance/logs?workspace_id=${encodeURIComponent(workspaceId)}&limit=${limit}`;
     return await apiRequest(endpoint, apiKey, { method: "GET" });
 }
+/** Fetch aggregated day-wise total work hours of employees */
+export async function fetchEmployeeDailyHours(apiKey, workspaceId, employeeId, startDate, endDate, apiUrl = "https://api.sureclock.karalasoft.com") {
+    const base = apiUrl.replace(/\/$/, "");
+    const params = new URLSearchParams({ workspace_id: workspaceId });
+    if (employeeId)
+        params.append("employee_id", employeeId);
+    if (startDate)
+        params.append("start_date", startDate);
+    if (endDate)
+        params.append("end_date", endDate);
+    const endpoint = `${base}/api/v1/attendance/employee-daily-hours?${params.toString()}`;
+    return await apiRequest(endpoint, apiKey, { method: "GET" });
+}
 /** Fetch workspace settings and similarity threshold */
 export async function fetchWorkspaceSettings(apiKey, workspaceId, apiUrl = "https://api.sureclock.karalasoft.com") {
     const base = apiUrl.replace(/\/$/, "");
     const endpoint = `${base}/api/v1/workspaces/${encodeURIComponent(workspaceId)}`;
     return await apiRequest(endpoint, apiKey, { method: "GET" });
 }
-/** Update workspace settings (name and similarity threshold) */
+/** Update workspace settings (name, similarity threshold, and timezone) */
 export async function updateWorkspaceSettings(apiKey, workspaceId, payload, apiUrl = "https://api.sureclock.karalasoft.com") {
     const base = apiUrl.replace(/\/$/, "");
     const endpoint = `${base}/api/v1/workspaces/${encodeURIComponent(workspaceId)}`;

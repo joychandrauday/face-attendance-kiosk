@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { cropAlignedFace, computeFrameMicroMotion } from "./faceDetector.js";
 import { ConfirmModal } from "./components/Modal.js";
+import { DEFAULT_TIMEZONE, format12HourTime } from "./utils/time.js";
 function playVerificationChime() {
     try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -46,7 +47,7 @@ if (typeof document !== "undefined") {
         document.head.appendChild(styleEl);
     }
 }
-export const FaceAttendanceKiosk = ({ apiKey, api_key, workspaceId, workspace_id, apiUrl = "https://api.sureclock.karalasoft.com", punchType = "AUTO", showModeSelector = false, buttonLabel = "Verify", loadingLabel = "Verifying...", theme = "dark", styles = {}, hideHeader = false, title = "Showroom Attendance Kiosk", subtitle, enableSound = true, mirror = true, autoScan = false, onSuccess, onError, onStatusChange, className = "", }) => {
+export const FaceAttendanceKiosk = ({ apiKey, api_key, workspaceId, workspace_id, apiUrl = "https://api.sureclock.karalasoft.com", punchType = "AUTO", showModeSelector = false, buttonLabel = "Verify", loadingLabel = "Verifying...", theme = "dark", styles = {}, hideHeader = false, title = "Showroom Attendance Kiosk", subtitle, enableSound = true, mirror = true, autoScan = false, timezone = DEFAULT_TIMEZONE, onSuccess, onError, onStatusChange, className = "", }) => {
     const effectiveApiKey = apiKey || api_key || "";
     const effectiveWorkspaceId = workspaceId || workspace_id || "";
     const [selectedPunchType, setSelectedPunchType] = useState(punchType);
@@ -64,21 +65,15 @@ export const FaceAttendanceKiosk = ({ apiKey, api_key, workspaceId, workspace_id
     const canvasRef = useRef(null);
     const canvas2Ref = useRef(null);
     const streamRef = useRef(null);
-    // Live Digital Clock (high density tabular-nums)
+    // Live Digital Clock (high density tabular-nums in 12-hour format)
     useEffect(() => {
         const updateTime = () => {
-            const now = new Date();
-            setCurrentTime(now.toLocaleTimeString(undefined, {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: false,
-            }));
+            setCurrentTime(format12HourTime(new Date(), timezone, true));
         };
         updateTime();
         const timer = setInterval(updateTime, 1000);
         return () => clearInterval(timer);
-    }, []);
+    }, [timezone]);
     // Sync punchType prop changes
     useEffect(() => {
         setSelectedPunchType(punchType);

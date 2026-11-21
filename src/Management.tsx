@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AnalyticsDashboard } from "./AnalyticsDashboard.js";
 import { AttendanceLogs } from "./AttendanceLogs.js";
 import { EmployeeTable } from "./EmployeeTable.js";
@@ -9,6 +9,8 @@ import { FaceAttendanceKiosk } from "./FaceAttendanceKiosk.js";
 import { FaceTable } from "./FaceTable.js";
 import { SureClockSettings } from "./Settings.js";
 import { KioskTheme, SureClockManagerProps } from "./types.js";
+import { DEFAULT_TIMEZONE } from "./utils/time.js";
+import { fetchWorkspaceSettings } from "./api.js";
 
 export const SureClockManager: React.FC<SureClockManagerProps> = ({
   apiKey,
@@ -17,6 +19,7 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
   workspace_id,
   apiUrl = "https://api.sureclock.karalasoft.com",
   theme = "dark",
+  timezone: propTimezone,
   styles = {},
   className = "",
   initialTab = "kiosk",
@@ -32,9 +35,23 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
 
   const [activeTab, setActiveTab] = useState<"kiosk" | "logs" | "employees" | "faces" | "analytics" | "settings">(initialTab);
   const [refreshKey, setRefreshKey] = useState<number>(0);
+  const [timezone, setTimezone] = useState<string>(propTimezone || DEFAULT_TIMEZONE);
   const [selectedEmpForFaces, setSelectedEmpForFaces] = useState<string>("");
   const [showEnrollModal, setShowEnrollModal] = useState<boolean>(false);
   const [enrollTargetEmpId, setEnrollTargetEmpId] = useState<string>("");
+
+  useEffect(() => {
+    if (propTimezone) {
+      setTimezone(propTimezone);
+      return;
+    }
+    if (!effectiveApiKey || !effectiveWorkspaceId) return;
+    fetchWorkspaceSettings(effectiveApiKey, effectiveWorkspaceId, apiUrl)
+      .then((data) => {
+        if (data.timezone) setTimezone(data.timezone);
+      })
+      .catch(() => {});
+  }, [effectiveApiKey, effectiveWorkspaceId, apiUrl, propTimezone]);
 
   const isLight = theme === "light";
   const isTransparent = theme === "transparent";
@@ -248,6 +265,7 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
               workspaceId={effectiveWorkspaceId}
               apiUrl={apiUrl}
               theme={theme}
+              timezone={timezone}
               buttonLabel="Verify Attendance"
               enableSound={true}
               mirror={true}
@@ -263,11 +281,12 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
 
       {activeTab === "logs" && (
         <AttendanceLogs
-          key={`logs-${refreshKey}`}
+          key={`logs-${refreshKey}-${timezone}`}
           apiKey={effectiveApiKey}
           workspaceId={effectiveWorkspaceId}
           apiUrl={apiUrl}
           theme={theme}
+          timezone={timezone}
           autoRefresh={true}
         />
       )}
@@ -296,11 +315,12 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
 
       {activeTab === "analytics" && (
         <AnalyticsDashboard
-          key={`analytics-${refreshKey}`}
+          key={`analytics-${refreshKey}-${timezone}`}
           apiKey={effectiveApiKey}
           workspaceId={effectiveWorkspaceId}
           apiUrl={apiUrl}
           theme={theme}
+          timezone={timezone}
         />
       )}
 
@@ -311,7 +331,13 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
           workspaceId={effectiveWorkspaceId}
           apiUrl={apiUrl}
           theme={theme}
-          onSave={() => setRefreshKey((k) => k + 1)}
+          timezone={timezone}
+          onSave={(updated) => {
+            if (updated?.timezone) {
+              setTimezone(updated.timezone);
+            }
+            setRefreshKey((k) => k + 1);
+          }}
         />
       )}
 
