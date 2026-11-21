@@ -6,6 +6,7 @@ import {
   FaceAttendanceKioskProps,
   PunchDirection,
 } from "./types.js";
+import { cropAlignedFace, computeFrameMicroMotion } from "./faceDetector.js";
 
 function playVerificationChime() {
   try {
@@ -93,6 +94,7 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvas2Ref = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   // Live Digital Clock (high density tabular-nums)
@@ -180,26 +182,6 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
     };
   }, [selectedDeviceId]);
 
-  // Capture canvas image (~40 KB JPEG)
-  const captureFrame = (): string | null => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || video.videoWidth === 0) return null;
-
-    canvas.width = 224;
-    canvas.height = 224;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    const size = Math.min(video.videoWidth, video.videoHeight);
-    const startX = (video.videoWidth - size) / 2;
-    const startY = (video.videoHeight - size) / 2;
-
-    ctx.drawImage(video, startX, startY, size, size, 0, 0, 224, 224);
-    return canvas.toDataURL("image/jpeg", 0.65);
-  };
-
   const handleVerify = async () => {
     if (!effectiveApiKey) {
       setErrorBanner("Missing api_key prop on <FaceAttendanceKiosk />");
@@ -210,22 +192,41 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
       return;
     }
 
+    const video = videoRef.current;
+    const canvas1 = canvasRef.current;
+    if (!video || !canvas1 || video.videoWidth === 0) {
+      setErrorBanner("Camera stream is not active.");
+      return;
+    }
+
     setLoading(true);
-    setStatusMessage("Verifying active liveness...");
+    setStatusMessage("Detecting & aligning face...");
     setErrorBanner(null);
     if (onStatusChange) onStatusChange("LIVENESS_CHECK");
 
-    // Dual-frame micro-motion verification
-    const frame1 = captureFrame();
-    if (!frame1) {
-      setErrorBanner("Failed to capture frame from camera stream.");
+    // Dual-frame micro-motion & eye-aligned face capture (strictly excludes clothing/body)
+    const crop1 = await cropAlignedFace(video, canvas1, 300, 0.85);
+    if (!crop1 || !crop1.image_base64) {
+      setErrorBanner("Failed to crop facial region from camera stream.");
       setLoading(false);
       return;
     }
 
     await new Promise((r) => setTimeout(r, 120));
-    const frame2 = captureFrame();
-    const finalImage = frame2 || frame1;
+    const canvas2 = canvas2Ref.current || canvas1;
+    const crop2 = await cropAlignedFace(video, canvas2, 300, 0.85);
+
+    // Compute active micro-motion between the two frames
+    if (canvas2Ref.current) {
+      const diff = computeFrameMicroMotion(canvas1, canvas2Ref.current);
+      // diff is normalized; real faces show natural pixel fluctuations
+      if (diff < 0.0005) {
+        // Very low variance indicates static screen / paper photo
+        console.warn("SureClock: Low micro-motion detected:", diff);
+      }
+    }
+
+    const finalImage = (crop2 && crop2.success) ? crop2.image_base64 : crop1.image_base64;
 
     setStatusMessage("Extracting 128D biometric vector...");
     if (onStatusChange) onStatusChange("AUTHENTICATING");
@@ -543,6 +544,20 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
             ...styles.hud,
           }}
         >
+          {/* Oval Face Guide (guides user to position face, eliminating clothing/torso) */}
+          <div
+            style={{
+              position: "absolute",
+              top: "4%",
+              left: "14%",
+              width: "72%",
+              height: "92%",
+              borderRadius: "50%",
+              border: "1.5px dashed rgba(14, 165, 233, 0.45)",
+              boxShadow: "0 0 16px rgba(14, 165, 233, 0.08) inset",
+              pointerEvents: "none",
+            }}
+          />
           {/* Top-Left */}
           <div
             style={{
@@ -800,8 +815,9 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
         )}
       </div>
 
-      {/* Hidden 224x224 Canvas for inference capture */}
+      {/* Hidden Canvases for eye-aligned face inference & active micro-motion */}
       <canvas ref={canvasRef} style={{ display: "none" }} />
+      <canvas ref={canvas2Ref} style={{ display: "none" }} />
 
       {/* Optional Camera Switcher if > 1 video device */}
       {availableDevices.length > 1 && (

@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { EnrollmentAngle, EnrollmentSuccessResult, FaceEnrollmentProps } from "./types.js";
 import { deleteEmployee } from "./api.js";
+import { cropAlignedFace } from "./faceDetector.js";
 
 const ANGLES: EnrollmentAngle[] = ["front", "left", "right"];
 
@@ -213,23 +214,14 @@ export const FaceEnrollment: React.FC<FaceEnrollmentProps> = ({
     };
   }, [stopCamera]);
 
-  // Frame capture helper (crops to 320x320 JPEG)
-  const captureFrame = useCallback((): string | null => {
+  // Frame capture helper (crops to high-quality 320x320 eye-aligned face JPEG, eliminating clothing)
+  const captureFrame = useCallback(async (): Promise<string | null> => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || video.videoWidth === 0) return null;
 
-    canvas.width = 320;
-    canvas.height = 320;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return null;
-
-    const size = Math.min(video.videoWidth, video.videoHeight);
-    const startX = (video.videoWidth - size) / 2;
-    const startY = (video.videoHeight - size) / 2;
-
-    ctx.drawImage(video, startX, startY, size, size, 0, 0, 320, 320);
-    return canvas.toDataURL("image/jpeg", 0.85);
+    const res = await cropAlignedFace(video, canvas, 320, 0.85);
+    return res ? res.image_base64 : null;
   }, []);
 
   // Upload single angle photo to backend with anti-duplicate 409 handling
@@ -323,7 +315,7 @@ export const FaceEnrollment: React.FC<FaceEnrollmentProps> = ({
     setFlashScreen(true);
     setTimeout(() => setFlashScreen(false), 180);
 
-    const photo = captureFrame();
+    const photo = await captureFrame();
     if (!photo) {
       isCapturingRef.current = false;
       return;

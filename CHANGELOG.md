@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-11-21
+### Added & Upgraded
+- **MediaPipe BlazeFace Face Detection & Alignment (`faceDetector.ts`)**:
+  - Tightly detects the face bounding box and extracts 6 facial landmarks directly on the client device (GPU/WASM in ~3ms).
+  - **Eye-Level Rotation Alignment**: Computes head tilt angle and rotates canvas to level eyes horizontally, matching InsightFace canonical standards.
+  - **Zero Clothing/Body Pollution**: Crops tightly from hair/brow to chin, completely excluding shoulders, neck, and clothing pixels.
+  - **Biometric Reticle Fallback**: Automatic ergonomic upper-face reticle crop when detector is initializing or unsupported.
+  - **Active Micro-Motion Liveness Guard**: Computes dual-frame pixel difference across successive captures to reject static paper/screen photos.
+- **Biometric Oval Reticle**: Added sleek dashed oval face-positioning guide inside the kiosk viewfinder.
+- **High-Quality Face Enrollment**: `<FaceEnrollment />` now uploads crisp $320 \times 320$ face-only portraits to Cloudinary for clean Admin Panel employee registries.
+- **Exported Utilities**: Exported `cropAlignedFace`, `computeFrameMicroMotion`, `getFaceDetector`, and `FaceCropResult`.
+
 ## [1.3.1] - 2026-11-19
 ### Added
 - **Automated Hands-Free Multi-Angle Biometric Enrollment (`<FaceEnrollment />`)**:

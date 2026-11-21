@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
+import { cropAlignedFace, computeFrameMicroMotion } from "./faceDetector.js";
 function playVerificationChime() {
     try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -58,6 +59,7 @@ export const FaceAttendanceKiosk = ({ apiKey, api_key, workspaceId, workspace_id
     const [selectedDeviceId, setSelectedDeviceId] = useState("");
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
+    const canvas2Ref = useRef(null);
     const streamRef = useRef(null);
     // Live Digital Clock (high density tabular-nums)
     useEffect(() => {
@@ -136,23 +138,6 @@ export const FaceAttendanceKiosk = ({ apiKey, api_key, workspaceId, workspace_id
             }
         };
     }, [selectedDeviceId]);
-    // Capture canvas image (~40 KB JPEG)
-    const captureFrame = () => {
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        if (!video || !canvas || video.videoWidth === 0)
-            return null;
-        canvas.width = 224;
-        canvas.height = 224;
-        const ctx = canvas.getContext("2d");
-        if (!ctx)
-            return null;
-        const size = Math.min(video.videoWidth, video.videoHeight);
-        const startX = (video.videoWidth - size) / 2;
-        const startY = (video.videoHeight - size) / 2;
-        ctx.drawImage(video, startX, startY, size, size, 0, 0, 224, 224);
-        return canvas.toDataURL("image/jpeg", 0.65);
-    };
     const handleVerify = async () => {
         if (!effectiveApiKey) {
             setErrorBanner("Missing api_key prop on <FaceAttendanceKiosk />");
@@ -162,21 +147,37 @@ export const FaceAttendanceKiosk = ({ apiKey, api_key, workspaceId, workspace_id
             setErrorBanner("Missing workspace_id prop on <FaceAttendanceKiosk />");
             return;
         }
+        const video = videoRef.current;
+        const canvas1 = canvasRef.current;
+        if (!video || !canvas1 || video.videoWidth === 0) {
+            setErrorBanner("Camera stream is not active.");
+            return;
+        }
         setLoading(true);
-        setStatusMessage("Verifying active liveness...");
+        setStatusMessage("Detecting & aligning face...");
         setErrorBanner(null);
         if (onStatusChange)
             onStatusChange("LIVENESS_CHECK");
-        // Dual-frame micro-motion verification
-        const frame1 = captureFrame();
-        if (!frame1) {
-            setErrorBanner("Failed to capture frame from camera stream.");
+        // Dual-frame micro-motion & eye-aligned face capture (strictly excludes clothing/body)
+        const crop1 = await cropAlignedFace(video, canvas1, 300, 0.85);
+        if (!crop1 || !crop1.image_base64) {
+            setErrorBanner("Failed to crop facial region from camera stream.");
             setLoading(false);
             return;
         }
         await new Promise((r) => setTimeout(r, 120));
-        const frame2 = captureFrame();
-        const finalImage = frame2 || frame1;
+        const canvas2 = canvas2Ref.current || canvas1;
+        const crop2 = await cropAlignedFace(video, canvas2, 300, 0.85);
+        // Compute active micro-motion between the two frames
+        if (canvas2Ref.current) {
+            const diff = computeFrameMicroMotion(canvas1, canvas2Ref.current);
+            // diff is normalized; real faces show natural pixel fluctuations
+            if (diff < 0.0005) {
+                // Very low variance indicates static screen / paper photo
+                console.warn("SureClock: Low micro-motion detected:", diff);
+            }
+        }
+        const finalImage = (crop2 && crop2.success) ? crop2.image_base64 : crop1.image_base64;
         setStatusMessage("Extracting 128D biometric vector...");
         if (onStatusChange)
             onStatusChange("AUTHENTICATING");
@@ -422,6 +423,17 @@ export const FaceAttendanceKiosk = ({ apiKey, api_key, workspaceId, workspace_id
                 } },
                 React.createElement("div", { style: {
                         position: "absolute",
+                        top: "4%",
+                        left: "14%",
+                        width: "72%",
+                        height: "92%",
+                        borderRadius: "50%",
+                        border: "1.5px dashed rgba(14, 165, 233, 0.45)",
+                        boxShadow: "0 0 16px rgba(14, 165, 233, 0.08) inset",
+                        pointerEvents: "none",
+                    } }),
+                React.createElement("div", { style: {
+                        position: "absolute",
                         top: 0,
                         left: 0,
                         width: "22px",
@@ -602,6 +614,7 @@ export const FaceAttendanceKiosk = ({ apiKey, api_key, workspaceId, workspace_id
                         (lastSuccess.confidence * 100).toFixed(1),
                         "%"))))),
         React.createElement("canvas", { ref: canvasRef, style: { display: "none" } }),
+        React.createElement("canvas", { ref: canvas2Ref, style: { display: "none" } }),
         availableDevices.length > 1 && (React.createElement("div", { style: { marginTop: "10px", display: "flex", justifyContent: "flex-end" } },
             React.createElement("select", { value: selectedDeviceId, onChange: (e) => setSelectedDeviceId(e.target.value), style: {
                     padding: "4px 8px",

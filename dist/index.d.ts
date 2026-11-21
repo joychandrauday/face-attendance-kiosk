@@ -4,6 +4,8 @@ export { SureClockManager, Management } from "./Management.js";
 export { EmployeeTable } from "./EmployeeTable.js";
 export { FaceTable } from "./FaceTable.js";
 export { AnalyticsDashboard } from "./AnalyticsDashboard.js";
+export { cropAlignedFace, computeFrameMicroMotion, getFaceDetector } from "./faceDetector.js";
+export type { FaceCropResult } from "./faceDetector.js";
 export * as api from "./api.js";
 export { fetchEmployees, deleteEmployee, registerFaceAngle, fetchAttendanceStats, fetchAttendanceLogs, } from "./api.js";
 export type { AttendanceSuccessResult, EnrollmentSuccessResult, FaceAttendanceKioskProps, FaceEnrollmentProps, SureClockManagerProps, KioskCustomStyles, KioskTheme, PunchDirection, EnrollmentAngle, } from "./types.js";
