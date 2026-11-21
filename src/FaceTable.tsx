@@ -211,7 +211,17 @@ export const FaceTable: React.FC<FaceTableProps> = ({
                 </div>
 
                 <div style={{ fontSize: "0.76rem", color: textMuted }}>
-                  <div>Employee: <strong style={{ color: textPrimary, fontFamily: "monospace" }}>{currentEmp.employee_id}</strong></div>
+                  <div>
+                    Employee:{" "}
+                    <strong style={{ color: textPrimary }}>
+                      {currentEmp.name || currentEmp.employee_id}
+                    </strong>
+                    {currentEmp.name && (
+                      <span style={{ color: textMuted, fontFamily: "monospace", marginLeft: "6px" }}>
+                        ({currentEmp.employee_id})
+                      </span>
+                    )}
+                  </div>
                   <div style={{ marginTop: "4px" }}>Workspace: {currentEmp.workspace_id}</div>
                   <div style={{ marginTop: "4px" }}>Status: Active 1:N Matchable</div>
                 </div>

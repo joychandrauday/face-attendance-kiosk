@@ -2,11 +2,12 @@
 export { FaceAttendanceKiosk } from "./FaceAttendanceKiosk.js";
 export { FaceEnrollment } from "./Enrollment.js";
 export { SureClockManager, Management } from "./Management.js";
+export { AttendanceLogs } from "./AttendanceLogs.js";
+export { SureClockSettings } from "./Settings.js";
 export { EmployeeTable } from "./EmployeeTable.js";
 export { FaceTable } from "./FaceTable.js";
-export { AttendanceLogs } from "./AttendanceLogs.js";
 export { AnalyticsDashboard } from "./AnalyticsDashboard.js";
 export { ConfirmModal, Toast } from "./components/Modal.js";
 export { cropAlignedFace, computeFrameMicroMotion, getFaceDetector } from "./faceDetector.js";
 export * as api from "./api.js";
-export { fetchEmployees, deleteEmployee, registerFaceAngle, fetchAttendanceStats, fetchAttendanceLogs, } from "./api.js";
+export { fetchEmployees, deleteEmployee, registerFaceAngle, fetchAttendanceStats, fetchAttendanceLogs, fetchWorkspaceSettings, updateWorkspaceSettings, checkEngineHealth, } from "./api.js";

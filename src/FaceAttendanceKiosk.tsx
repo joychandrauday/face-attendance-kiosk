@@ -256,10 +256,12 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
       }
 
       if (data.match && data.employee_id) {
+        const empDisplayName = data.employee_name || data.employee_id;
+
         // Active shift detected: requires employee confirmation to clock out
         if (data.action_required === "CONFIRM_CLOCK_OUT" || data.punch_type === "PENDING_OUT") {
           setPendingClockOut(data);
-          setStatusMessage(`Active shift detected for ${data.employee_id}. Awaiting confirmation...`);
+          setStatusMessage(`Active shift detected for ${empDisplayName}. Awaiting confirmation...`);
           if (onStatusChange) onStatusChange("CONFIRM_CLOCK_OUT");
           return;
         }
@@ -272,9 +274,9 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
           const duration = data.session_duration_minutes != null
             ? ` (${Math.floor(data.session_duration_minutes / 60)}h ${data.session_duration_minutes % 60}m)`
             : "";
-          setStatusMessage(`Clock Out verified: ${data.employee_id}${duration}`);
+          setStatusMessage(`Clock Out verified: ${empDisplayName}${duration}`);
         } else {
-          setStatusMessage(`Clock In verified: ${data.employee_id}`);
+          setStatusMessage(`Clock In verified: ${empDisplayName}`);
         }
 
         if (enableSound) playVerificationChime();
@@ -753,18 +755,30 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
               </svg>
             </div>
 
-            {/* Employee ID */}
+            {/* Employee Name (Primary) & ID (Secondary) */}
             <h3
               style={{
                 fontSize: "1.3rem",
                 fontWeight: 700,
-                margin: "0 0 4px 0",
+                margin: "0 0 2px 0",
                 color: themeTokens.textPrimary,
                 letterSpacing: "-0.01em",
               }}
             >
-              {lastSuccess.employee_id}
+              {lastSuccess.employee_name || lastSuccess.employee_id}
             </h3>
+            {lastSuccess.employee_name && (
+              <div
+                style={{
+                  fontSize: "0.78rem",
+                  fontFamily: "monospace",
+                  color: themeTokens.textMuted,
+                  marginBottom: "6px",
+                }}
+              >
+                ID: {lastSuccess.employee_id}
+              </div>
+            )}
 
             {/* Contextual message */}
             <p
@@ -945,7 +959,12 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
         title="Confirm Clock-Out"
         message={
           <span>
-            Hello <strong style={{ color: "#38bdf8", fontFamily: "monospace" }}>{pendingClockOut?.employee_id}</strong>! You have an active shift of{" "}
+            Hello <strong style={{ color: "#38bdf8" }}>{pendingClockOut?.employee_name || pendingClockOut?.employee_id}</strong>
+            {pendingClockOut?.employee_name && (
+              <span style={{ fontSize: "0.82rem", color: "#94a3b8", fontFamily: "monospace", marginLeft: "5px" }}>
+                ({pendingClockOut.employee_id})
+              </span>
+            )}! You have an active shift of{" "}
             <strong style={{ color: "#f59e0b" }}>
               {pendingClockOut?.session_duration_minutes != null
                 ? `${Math.floor(pendingClockOut.session_duration_minutes / 60)}h ${pendingClockOut.session_duration_minutes % 60}m`
@@ -994,7 +1013,8 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
             const duration = confirmedData.session_duration_minutes != null
               ? ` (${Math.floor(confirmedData.session_duration_minutes / 60)}h ${confirmedData.session_duration_minutes % 60}m)`
               : "";
-            setStatusMessage(`Clock Out verified: ${confirmedData.employee_id}${duration}`);
+            const confirmedDisplayName = confirmedData.employee_name || confirmedData.employee_id;
+            setStatusMessage(`Clock Out verified: ${confirmedDisplayName}${duration}`);
             if (enableSound) playVerificationChime();
             if (onSuccess) onSuccess(confirmedData);
             if (onStatusChange) onStatusChange("SUCCESS");

@@ -60,3 +60,39 @@ export async function fetchAttendanceLogs(apiKey, workspaceId, limit = 50, apiUr
     const endpoint = `${base}/api/v1/attendance/logs?workspace_id=${encodeURIComponent(workspaceId)}&limit=${limit}`;
     return await apiRequest(endpoint, apiKey, { method: "GET" });
 }
+/** Fetch workspace settings and similarity threshold */
+export async function fetchWorkspaceSettings(apiKey, workspaceId, apiUrl = "https://api.sureclock.karalasoft.com") {
+    const base = apiUrl.replace(/\/$/, "");
+    const endpoint = `${base}/api/v1/workspaces/${encodeURIComponent(workspaceId)}`;
+    return await apiRequest(endpoint, apiKey, { method: "GET" });
+}
+/** Update workspace settings (name and similarity threshold) */
+export async function updateWorkspaceSettings(apiKey, workspaceId, payload, apiUrl = "https://api.sureclock.karalasoft.com") {
+    const base = apiUrl.replace(/\/$/, "");
+    const endpoint = `${base}/api/v1/workspaces/${encodeURIComponent(workspaceId)}`;
+    return await apiRequest(endpoint, apiKey, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+    });
+}
+/** Ping biometric engine health */
+export async function checkEngineHealth(apiUrl = "https://api.sureclock.karalasoft.com") {
+    const start = performance.now();
+    const base = apiUrl.replace(/\/$/, "");
+    try {
+        const res = await fetch(`${base}/health`, { method: "GET" });
+        const latencyMs = Math.round(performance.now() - start);
+        if (res.ok) {
+            const text = await res.text();
+            return { ok: true, latencyMs, message: text.trim() || "Healthy" };
+        }
+        return { ok: false, latencyMs, message: `HTTP ${res.status}` };
+    }
+    catch (err) {
+        return {
+            ok: false,
+            latencyMs: Math.round(performance.now() - start),
+            message: err.message || "Unreachable",
+        };
+    }
+}

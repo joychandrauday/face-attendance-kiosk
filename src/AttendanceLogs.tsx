@@ -74,8 +74,11 @@ export const AttendanceLogs: React.FC<AttendanceLogsProps> = ({
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
+      const searchLower = search.toLowerCase();
       const matchesSearch =
-        !search || log.employee_id.toLowerCase().includes(search.toLowerCase());
+        !search ||
+        log.employee_id.toLowerCase().includes(searchLower) ||
+        (log.employee_name && log.employee_name.toLowerCase().includes(searchLower));
       const pType = (log.punch_type || "IN").toUpperCase();
       const matchesType =
         filterType === "ALL" ||
@@ -267,11 +270,11 @@ export const AttendanceLogs: React.FC<AttendanceLogsProps> = ({
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                   >
                     <td style={{ padding: "12px 20px" }}>
-                      <div style={{ fontWeight: 600, fontFamily: "monospace", fontSize: "0.9rem" }}>
-                        {log.employee_id}
+                      <div style={{ fontWeight: 600, fontSize: "0.88rem", color: themeTokens.textPrimary }}>
+                        {log.employee_name || log.employee_id}
                       </div>
-                      <div style={{ fontSize: "0.72rem", color: themeTokens.textMuted }}>
-                        {workspaceId}
+                      <div style={{ fontSize: "0.72rem", color: themeTokens.textMuted, fontFamily: "monospace", marginTop: "2px" }}>
+                        {log.employee_id} • {workspaceId}
                       </div>
                     </td>
                     <td style={{ padding: "12px 16px" }}>

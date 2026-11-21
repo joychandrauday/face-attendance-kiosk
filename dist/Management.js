@@ -6,7 +6,8 @@ import { EmployeeTable } from "./EmployeeTable.js";
 import { FaceEnrollment } from "./Enrollment.js";
 import { FaceAttendanceKiosk } from "./FaceAttendanceKiosk.js";
 import { FaceTable } from "./FaceTable.js";
-export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, apiUrl = "https://api.sureclock.karalasoft.com", theme = "dark", styles = {}, className = "", initialTab = "kiosk", title = "SureClock Biometric Hub", showKioskTab = true, kioskProps = {}, onAttendance, onEnrollment, }) => {
+import { SureClockSettings } from "./Settings.js";
+export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, apiUrl = "https://api.sureclock.karalasoft.com", theme = "dark", styles = {}, className = "", initialTab = "kiosk", title = "SureClock Biometric Hub", showKioskTab = true, showSettingsTab = true, kioskProps = {}, onAttendance, onEnrollment, }) => {
     const effectiveApiKey = apiKey || api_key || "";
     const effectiveWorkspaceId = workspaceId || workspace_id || "";
     const [activeTab, setActiveTab] = useState(initialTab);
@@ -139,7 +140,18 @@ export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, a
                         fontWeight: 600,
                         cursor: "pointer",
                         transition: "all 0.2s ease",
-                    } }, "\uD83D\uDCCA Analytics"))),
+                    } }, "\uD83D\uDCCA Analytics"),
+                showSettingsTab && (React.createElement("button", { type: "button", onClick: () => setActiveTab("settings"), style: {
+                        padding: "6px 14px",
+                        borderRadius: "8px",
+                        border: "none",
+                        backgroundColor: activeTab === "settings" ? themeTokens.tabActive : "transparent",
+                        color: activeTab === "settings" ? "#ffffff" : themeTokens.textMuted,
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                    } }, "\u2699\uFE0F Settings")))),
         activeTab === "kiosk" && showKioskTab && (React.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "12px 0" } },
             React.createElement("div", { style: { maxWidth: "480px", width: "100%", margin: "0 auto" } },
                 React.createElement(FaceAttendanceKiosk, { apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme, buttonLabel: "Verify Attendance", enableSound: true, mirror: true, onSuccess: (result) => {
@@ -151,6 +163,7 @@ export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, a
         activeTab === "employees" && (React.createElement(EmployeeTable, { apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme, onEnrollNew: () => handleOpenEnroll(), onSelectEmployee: handleSelectEmployeeForFaces })),
         activeTab === "faces" && (React.createElement(FaceTable, { apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, selectedEmployeeId: selectedEmpForFaces, apiUrl: apiUrl, theme: theme, onReEnroll: (empId) => handleOpenEnroll(empId) })),
         activeTab === "analytics" && (React.createElement(AnalyticsDashboard, { key: `analytics-${refreshKey}`, apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme })),
+        activeTab === "settings" && showSettingsTab && (React.createElement(SureClockSettings, { key: `settings-${refreshKey}`, apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme, onSave: () => setRefreshKey((k) => k + 1) })),
         showEnrollModal && (React.createElement("div", { style: {
                 position: "fixed",
                 inset: 0,

@@ -7,6 +7,7 @@ import { EmployeeTable } from "./EmployeeTable.js";
 import { FaceEnrollment } from "./Enrollment.js";
 import { FaceAttendanceKiosk } from "./FaceAttendanceKiosk.js";
 import { FaceTable } from "./FaceTable.js";
+import { SureClockSettings } from "./Settings.js";
 import { KioskTheme, SureClockManagerProps } from "./types.js";
 
 export const SureClockManager: React.FC<SureClockManagerProps> = ({
@@ -21,6 +22,7 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
   initialTab = "kiosk",
   title = "SureClock Biometric Hub",
   showKioskTab = true,
+  showSettingsTab = true,
   kioskProps = {},
   onAttendance,
   onEnrollment,
@@ -28,7 +30,7 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
   const effectiveApiKey = apiKey || api_key || "";
   const effectiveWorkspaceId = workspaceId || workspace_id || "";
 
-  const [activeTab, setActiveTab] = useState<"kiosk" | "logs" | "employees" | "faces" | "analytics">(initialTab);
+  const [activeTab, setActiveTab] = useState<"kiosk" | "logs" | "employees" | "faces" | "analytics" | "settings">(initialTab);
   const [refreshKey, setRefreshKey] = useState<number>(0);
   const [selectedEmpForFaces, setSelectedEmpForFaces] = useState<string>("");
   const [showEnrollModal, setShowEnrollModal] = useState<boolean>(false);
@@ -215,6 +217,25 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
           >
             📊 Analytics
           </button>
+          {showSettingsTab && (
+            <button
+              type="button"
+              onClick={() => setActiveTab("settings")}
+              style={{
+                padding: "6px 14px",
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: activeTab === "settings" ? themeTokens.tabActive : "transparent",
+                color: activeTab === "settings" ? "#ffffff" : themeTokens.textMuted,
+                fontSize: "0.82rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+            >
+              ⚙️ Settings
+            </button>
+          )}
         </div>
       </div>
 
@@ -280,6 +301,17 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
           workspaceId={effectiveWorkspaceId}
           apiUrl={apiUrl}
           theme={theme}
+        />
+      )}
+
+      {activeTab === "settings" && showSettingsTab && (
+        <SureClockSettings
+          key={`settings-${refreshKey}`}
+          apiKey={effectiveApiKey}
+          workspaceId={effectiveWorkspaceId}
+          apiUrl={apiUrl}
+          theme={theme}
+          onSave={() => setRefreshKey((k) => k + 1)}
         />
       )}
 

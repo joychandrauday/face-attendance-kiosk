@@ -32,6 +32,7 @@ export interface AttendanceStatResult {
 export interface AttendanceLogRecord {
   id: string | number;
   employee_id: string;
+  employee_name?: string;
   workspace_id: string;
   punch_type: string;
   confidence: number;
@@ -150,4 +151,61 @@ export async function fetchAttendanceLogs(
   const base = apiUrl.replace(/\/$/, "");
   const endpoint = `${base}/api/v1/attendance/logs?workspace_id=${encodeURIComponent(workspaceId)}&limit=${limit}`;
   return await apiRequest<AttendanceLogRecord[]>(endpoint, apiKey, { method: "GET" });
+}
+
+export interface WorkspaceSettings {
+  workspace_id: string;
+  name: string;
+  similarity_threshold?: number;
+  enrolled_employees_count?: number;
+  created_at?: string;
+}
+
+/** Fetch workspace settings and similarity threshold */
+export async function fetchWorkspaceSettings(
+  apiKey: string,
+  workspaceId: string,
+  apiUrl = "https://api.sureclock.karalasoft.com"
+): Promise<WorkspaceSettings> {
+  const base = apiUrl.replace(/\/$/, "");
+  const endpoint = `${base}/api/v1/workspaces/${encodeURIComponent(workspaceId)}`;
+  return await apiRequest<WorkspaceSettings>(endpoint, apiKey, { method: "GET" });
+}
+
+/** Update workspace settings (name and similarity threshold) */
+export async function updateWorkspaceSettings(
+  apiKey: string,
+  workspaceId: string,
+  payload: { name?: string; similarity_threshold?: number },
+  apiUrl = "https://api.sureclock.karalasoft.com"
+): Promise<WorkspaceSettings> {
+  const base = apiUrl.replace(/\/$/, "");
+  const endpoint = `${base}/api/v1/workspaces/${encodeURIComponent(workspaceId)}`;
+  return await apiRequest<WorkspaceSettings>(endpoint, apiKey, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+/** Ping biometric engine health */
+export async function checkEngineHealth(
+  apiUrl = "https://api.sureclock.karalasoft.com"
+): Promise<{ ok: boolean; latencyMs: number; message: string }> {
+  const start = performance.now();
+  const base = apiUrl.replace(/\/$/, "");
+  try {
+    const res = await fetch(`${base}/health`, { method: "GET" });
+    const latencyMs = Math.round(performance.now() - start);
+    if (res.ok) {
+      const text = await res.text();
+      return { ok: true, latencyMs, message: text.trim() || "Healthy" };
+    }
+    return { ok: false, latencyMs, message: `HTTP ${res.status}` };
+  } catch (err: any) {
+    return {
+      ok: false,
+      latencyMs: Math.round(performance.now() - start),
+      message: err.message || "Unreachable",
+    };
+  }
 }

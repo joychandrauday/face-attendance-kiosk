@@ -26,6 +26,7 @@ export interface AttendanceStatResult {
 export interface AttendanceLogRecord {
     id: string | number;
     employee_id: string;
+    employee_name?: string;
     workspace_id: string;
     punch_type: string;
     confidence: number;
@@ -60,3 +61,23 @@ export declare function registerFaceAngle(apiKey: string, payload: RegisterFaceP
 export declare function fetchAttendanceStats(apiKey: string, workspaceId: string, date?: string, apiUrl?: string): Promise<AttendanceStatResult>;
 /** Fetch attendance logs for workspace */
 export declare function fetchAttendanceLogs(apiKey: string, workspaceId: string, limit?: number, apiUrl?: string): Promise<AttendanceLogRecord[]>;
+export interface WorkspaceSettings {
+    workspace_id: string;
+    name: string;
+    similarity_threshold?: number;
+    enrolled_employees_count?: number;
+    created_at?: string;
+}
+/** Fetch workspace settings and similarity threshold */
+export declare function fetchWorkspaceSettings(apiKey: string, workspaceId: string, apiUrl?: string): Promise<WorkspaceSettings>;
+/** Update workspace settings (name and similarity threshold) */
+export declare function updateWorkspaceSettings(apiKey: string, workspaceId: string, payload: {
+    name?: string;
+    similarity_threshold?: number;
+}, apiUrl?: string): Promise<WorkspaceSettings>;
+/** Ping biometric engine health */
+export declare function checkEngineHealth(apiUrl?: string): Promise<{
+    ok: boolean;
+    latencyMs: number;
+    message: string;
+}>;

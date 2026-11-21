@@ -134,7 +134,9 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
                         const isOut = log.punch_type === "OUT";
                         return (React.createElement("tr", { key: log.id || i, style: { borderBottom: `1px solid ${border}` } },
                             React.createElement("td", { style: { padding: "10px 12px", fontFamily: "monospace", color: textMuted } }, log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : "-"),
-                            React.createElement("td", { style: { padding: "10px 12px", fontWeight: 600, fontFamily: "monospace" } }, log.employee_id),
+                            React.createElement("td", { style: { padding: "10px 12px" } },
+                                React.createElement("div", { style: { fontWeight: 600 } }, log.employee_name || log.employee_id),
+                                log.employee_name && (React.createElement("div", { style: { fontSize: "0.7rem", color: textMuted, fontFamily: "monospace" } }, log.employee_id))),
                             React.createElement("td", { style: { padding: "10px 12px" } },
                                 React.createElement("span", { style: {
                                         padding: "2px 8px",

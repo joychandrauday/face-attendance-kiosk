@@ -208,8 +208,10 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
               filtered.map((emp) => (
                 <tr key={emp.employee_id} style={{ borderBottom: `1px solid ${border}` }}>
                   <td style={{ padding: "12px 14px" }}>
-                    <div style={{ fontWeight: 600, color: textPrimary }}>{emp.name || "—"}</div>
-                    <div style={{ fontSize: "0.75rem", fontFamily: "monospace", color: textMuted }}>{emp.employee_id}</div>
+                    <div style={{ fontWeight: 600, color: textPrimary }}>{emp.name || emp.employee_id}</div>
+                    <div style={{ fontSize: "0.75rem", fontFamily: "monospace", color: textMuted }}>
+                      {emp.name ? emp.employee_id : "Badge Code"}
+                    </div>
                   </td>
                   <td style={{ padding: "12px 14px", color: textMuted }}>
                     {emp.workspace_id}

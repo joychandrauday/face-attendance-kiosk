@@ -9,6 +9,7 @@ export type EnrollmentAngle = "left" | "right" | "front";
 export interface AttendanceSuccessResult {
   match: boolean;
   employee_id: string;
+  employee_name?: string;
   confidence: number;
   timestamp: string;
   punch_type?: string;
@@ -129,10 +130,30 @@ export interface SureClockManagerProps {
   theme?: KioskTheme;
   styles?: KioskCustomStyles;
   className?: string;
-  initialTab?: "kiosk" | "logs" | "employees" | "faces" | "analytics";
+  initialTab?: "kiosk" | "logs" | "employees" | "faces" | "analytics" | "settings";
   title?: string;
   showKioskTab?: boolean;
+  showSettingsTab?: boolean;
   kioskProps?: Partial<FaceAttendanceKioskProps>;
   onAttendance?: (result: AttendanceSuccessResult) => void;
   onEnrollment?: (result: EnrollmentSuccessResult) => void;
+}
+
+export interface SureClockSettingsProps {
+  apiKey?: string;
+  api_key?: string;
+  workspaceId?: string;
+  workspace_id?: string;
+  publishableKey?: string;
+  secretKey?: string;
+  apiUrl?: string;
+  theme?: KioskTheme;
+  styles?: KioskCustomStyles;
+  className?: string;
+  onSave?: (settings: {
+    name?: string;
+    similarity_threshold?: number;
+    audioChime?: boolean;
+    shiftGuard?: boolean;
+  }) => void;
 }

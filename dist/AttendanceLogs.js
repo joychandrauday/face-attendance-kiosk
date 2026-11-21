@@ -52,7 +52,10 @@ export const AttendanceLogs = ({ apiKey, workspaceId, apiUrl = "https://api.sure
     }, [autoRefresh, refreshIntervalMs, apiKey, workspaceId, apiUrl, limit]);
     const filteredLogs = useMemo(() => {
         return logs.filter((log) => {
-            const matchesSearch = !search || log.employee_id.toLowerCase().includes(search.toLowerCase());
+            const searchLower = search.toLowerCase();
+            const matchesSearch = !search ||
+                log.employee_id.toLowerCase().includes(searchLower) ||
+                (log.employee_name && log.employee_name.toLowerCase().includes(searchLower));
             const pType = (log.punch_type || "IN").toUpperCase();
             const matchesType = filterType === "ALL" ||
                 (filterType === "IN" && pType === "IN") ||
@@ -162,8 +165,11 @@ export const AttendanceLogs = ({ apiKey, workspaceId, apiUrl = "https://api.sure
                             transition: "background-color 0.1s ease",
                         }, onMouseEnter: (e) => (e.currentTarget.style.backgroundColor = themeTokens.rowHover), onMouseLeave: (e) => (e.currentTarget.style.backgroundColor = "transparent") },
                         React.createElement("td", { style: { padding: "12px 20px" } },
-                            React.createElement("div", { style: { fontWeight: 600, fontFamily: "monospace", fontSize: "0.9rem" } }, log.employee_id),
-                            React.createElement("div", { style: { fontSize: "0.72rem", color: themeTokens.textMuted } }, workspaceId)),
+                            React.createElement("div", { style: { fontWeight: 600, fontSize: "0.88rem", color: themeTokens.textPrimary } }, log.employee_name || log.employee_id),
+                            React.createElement("div", { style: { fontSize: "0.72rem", color: themeTokens.textMuted, fontFamily: "monospace", marginTop: "2px" } },
+                                log.employee_id,
+                                " \u2022 ",
+                                workspaceId)),
                         React.createElement("td", { style: { padding: "12px 16px" } },
                             React.createElement("span", { style: {
                                     display: "inline-flex",

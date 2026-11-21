@@ -3,10 +3,11 @@
 export { FaceAttendanceKiosk } from "./FaceAttendanceKiosk.js";
 export { FaceEnrollment } from "./Enrollment.js";
 export { SureClockManager, Management } from "./Management.js";
-export { EmployeeTable } from "./EmployeeTable.js";
-export { FaceTable } from "./FaceTable.js";
 export { AttendanceLogs } from "./AttendanceLogs.js";
 export type { AttendanceLogsProps } from "./AttendanceLogs.js";
+export { SureClockSettings } from "./Settings.js";
+export { EmployeeTable } from "./EmployeeTable.js";
+export { FaceTable } from "./FaceTable.js";
 export { AnalyticsDashboard } from "./AnalyticsDashboard.js";
 export { ConfirmModal, Toast } from "./components/Modal.js";
 export type { ConfirmModalProps, ToastProps } from "./components/Modal.js";
@@ -20,6 +21,9 @@ export {
   registerFaceAngle,
   fetchAttendanceStats,
   fetchAttendanceLogs,
+  fetchWorkspaceSettings,
+  updateWorkspaceSettings,
+  checkEngineHealth,
 } from "./api.js";
 
 export type {
@@ -28,6 +32,7 @@ export type {
   FaceAttendanceKioskProps,
   FaceEnrollmentProps,
   SureClockManagerProps,
+  SureClockSettingsProps,
   KioskCustomStyles,
   KioskTheme,
   PunchDirection,
@@ -40,4 +45,5 @@ export type {
   AttendanceLogRecord,
   RegisterFacePayload,
   RegisterFaceResponse,
+  WorkspaceSettings,
 } from "./api.js";
