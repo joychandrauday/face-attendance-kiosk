@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { AnalyticsDashboard } from "./AnalyticsDashboard.js";
+import { AttendanceLogs } from "./AttendanceLogs.js";
 import { EmployeeTable } from "./EmployeeTable.js";
 import { FaceEnrollment } from "./Enrollment.js";
 import { FaceAttendanceKiosk } from "./FaceAttendanceKiosk.js";
@@ -27,7 +28,8 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
   const effectiveApiKey = apiKey || api_key || "";
   const effectiveWorkspaceId = workspaceId || workspace_id || "";
 
-  const [activeTab, setActiveTab] = useState<"kiosk" | "employees" | "faces" | "analytics">(initialTab);
+  const [activeTab, setActiveTab] = useState<"kiosk" | "logs" | "employees" | "faces" | "analytics">(initialTab);
+  const [refreshKey, setRefreshKey] = useState<number>(0);
   const [selectedEmpForFaces, setSelectedEmpForFaces] = useState<string>("");
   const [showEnrollModal, setShowEnrollModal] = useState<boolean>(false);
   const [enrollTargetEmpId, setEnrollTargetEmpId] = useState<string>("");
@@ -142,9 +144,26 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
                 transition: "all 0.2s ease",
               }}
             >
-              📸 Attendance Kiosk
+              📸 Kiosk
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => setActiveTab("logs")}
+            style={{
+              padding: "6px 14px",
+              borderRadius: "8px",
+              border: "none",
+              backgroundColor: activeTab === "logs" ? themeTokens.tabActive : "transparent",
+              color: activeTab === "logs" ? "#ffffff" : themeTokens.textMuted,
+              fontSize: "0.82rem",
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+          >
+            📋 Logs
+          </button>
           <button
             type="button"
             onClick={() => setActiveTab("employees")}
@@ -177,7 +196,7 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
               transition: "all 0.2s ease",
             }}
           >
-            👤 Biometric Faces
+            👤 Faces
           </button>
           <button
             type="button"
@@ -194,7 +213,7 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
               transition: "all 0.2s ease",
             }}
           >
-            📊 Analytics & Charts
+            📊 Analytics
           </button>
         </div>
       </div>
@@ -212,12 +231,24 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
               enableSound={true}
               mirror={true}
               onSuccess={(result) => {
+                setRefreshKey((k) => k + 1);
                 if (onAttendance) onAttendance(result);
               }}
               {...kioskProps}
             />
           </div>
         </div>
+      )}
+
+      {activeTab === "logs" && (
+        <AttendanceLogs
+          key={`logs-${refreshKey}`}
+          apiKey={effectiveApiKey}
+          workspaceId={effectiveWorkspaceId}
+          apiUrl={apiUrl}
+          theme={theme}
+          autoRefresh={true}
+        />
       )}
 
       {activeTab === "employees" && (
@@ -244,6 +275,7 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
 
       {activeTab === "analytics" && (
         <AnalyticsDashboard
+          key={`analytics-${refreshKey}`}
           apiKey={effectiveApiKey}
           workspaceId={effectiveWorkspaceId}
           apiUrl={apiUrl}

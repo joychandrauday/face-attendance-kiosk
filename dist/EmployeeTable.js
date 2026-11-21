@@ -1,12 +1,15 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { deleteEmployee, fetchEmployees } from "./api.js";
+import { ConfirmModal, Toast } from "./components/Modal.js";
 export const EmployeeTable = ({ apiKey, workspaceId, apiUrl = "https://api.sureclock.karalasoft.com", theme = "dark", onEnrollNew, onSelectEmployee, }) => {
     const [employees, setEmployees] = useState([]);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState(null);
     const [error, setError] = useState(null);
+    const [employeeToDelete, setEmployeeToDelete] = useState(null);
+    const [toast, setToast] = useState(null);
     const isLight = theme === "light";
     const border = isLight ? "#e2e8f0" : "#1e293b";
     const surface = isLight ? "#f8fafc" : "#0f172a";
@@ -31,20 +34,26 @@ export const EmployeeTable = ({ apiKey, workspaceId, apiUrl = "https://api.surec
     useEffect(() => {
         loadData();
     }, [apiKey, workspaceId, apiUrl]);
-    const handleDelete = async (employeeId) => {
-        if (!window.confirm(`Are you sure you want to permanently delete biometric data for ${employeeId}?`)) {
+    const handleDelete = (employeeId) => {
+        setEmployeeToDelete(employeeId);
+    };
+    const confirmDelete = async () => {
+        if (!employeeToDelete)
             return;
-        }
-        setDeletingId(employeeId);
+        setDeletingId(employeeToDelete);
         try {
-            await deleteEmployee(apiKey, workspaceId, employeeId, apiUrl);
-            setEmployees((prev) => prev.filter((e) => e.employee_id !== employeeId));
+            await deleteEmployee(apiKey, workspaceId, employeeToDelete, apiUrl);
+            setEmployees((prev) => prev.filter((e) => e.employee_id !== employeeToDelete));
+            setToast({ message: `Biometric data for ${employeeToDelete} permanently deleted.`, type: "success" });
+            setTimeout(() => setToast(null), 3500);
         }
         catch (err) {
-            alert(`Error deleting employee: ${err.message}`);
+            setToast({ message: `Error deleting employee: ${err.message}`, type: "error" });
+            setTimeout(() => setToast(null), 4000);
         }
         finally {
             setDeletingId(null);
+            setEmployeeToDelete(null);
         }
     };
     const filtered = employees.filter((e) => e.employee_id.toLowerCase().includes(search.toLowerCase()) ||
@@ -155,5 +164,12 @@ export const EmployeeTable = ({ apiKey, workspaceId, apiUrl = "https://api.surec
                                     color: "#ef4444",
                                     fontSize: "0.78rem",
                                     cursor: deletingId === emp.employee_id ? "not-allowed" : "pointer",
-                                } }, deletingId === emp.employee_id ? "Deleting..." : "Delete"))))))))))));
+                                } }, deletingId === emp.employee_id ? "Deleting..." : "Delete")))))))))),
+        React.createElement(ConfirmModal, { isOpen: !!employeeToDelete, title: "Delete Biometric Profile", message: React.createElement("span", null,
+                "Are you sure you want to permanently delete biometric vectors and profile records for employee",
+                " ",
+                React.createElement("strong", { style: { color: "#ef4444", fontFamily: "monospace" } }, employeeToDelete),
+                "? This action cannot be undone."), confirmLabel: "Delete Biometrics", cancelLabel: "Cancel", danger: true, theme: theme, loading: !!deletingId, onCancel: () => setEmployeeToDelete(null), onConfirm: confirmDelete }),
+        toast && (React.createElement("div", { style: { position: "fixed", bottom: "24px", right: "24px", zIndex: 99999 } },
+            React.createElement(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) })))));
 };

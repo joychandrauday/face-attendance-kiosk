@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { EnrolledEmployee, deleteEmployee, fetchEmployees } from "./api.js";
 import { KioskTheme } from "./types.js";
+import { ConfirmModal, Toast } from "./components/Modal.js";
 
 interface EmployeeTableProps {
   apiKey: string;
@@ -26,6 +27,9 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [employeeToDelete, setEmployeeToDelete] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const isLight = theme === "light";
   const border = isLight ? "#e2e8f0" : "#1e293b";
@@ -51,18 +55,24 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
     loadData();
   }, [apiKey, workspaceId, apiUrl]);
 
-  const handleDelete = async (employeeId: string) => {
-    if (!window.confirm(`Are you sure you want to permanently delete biometric data for ${employeeId}?`)) {
-      return;
-    }
-    setDeletingId(employeeId);
+  const handleDelete = (employeeId: string) => {
+    setEmployeeToDelete(employeeId);
+  };
+
+  const confirmDelete = async () => {
+    if (!employeeToDelete) return;
+    setDeletingId(employeeToDelete);
     try {
-      await deleteEmployee(apiKey, workspaceId, employeeId, apiUrl);
-      setEmployees((prev) => prev.filter((e) => e.employee_id !== employeeId));
+      await deleteEmployee(apiKey, workspaceId, employeeToDelete, apiUrl);
+      setEmployees((prev) => prev.filter((e) => e.employee_id !== employeeToDelete));
+      setToast({ message: `Biometric data for ${employeeToDelete} permanently deleted.`, type: "success" });
+      setTimeout(() => setToast(null), 3500);
     } catch (err: any) {
-      alert(`Error deleting employee: ${err.message}`);
+      setToast({ message: `Error deleting employee: ${err.message}`, type: "error" });
+      setTimeout(() => setToast(null), 4000);
     } finally {
       setDeletingId(null);
+      setEmployeeToDelete(null);
     }
   };
 
@@ -265,6 +275,32 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Custom Confirmation Modal for Deletion */}
+      <ConfirmModal
+        isOpen={!!employeeToDelete}
+        title="Delete Biometric Profile"
+        message={
+          <span>
+            Are you sure you want to permanently delete biometric vectors and profile records for employee{" "}
+            <strong style={{ color: "#ef4444", fontFamily: "monospace" }}>{employeeToDelete}</strong>? This action cannot be undone.
+          </span>
+        }
+        confirmLabel="Delete Biometrics"
+        cancelLabel="Cancel"
+        danger={true}
+        theme={theme}
+        loading={!!deletingId}
+        onCancel={() => setEmployeeToDelete(null)}
+        onConfirm={confirmDelete}
+      />
+
+      {/* Non-intrusive Toast Notification */}
+      {toast && (
+        <div style={{ position: "fixed", bottom: "24px", right: "24px", zIndex: 99999 }}>
+          <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+        </div>
+      )}
     </div>
   );
 };

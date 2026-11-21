@@ -7,6 +7,7 @@ import {
   PunchDirection,
 } from "./types.js";
 import { cropAlignedFace, computeFrameMicroMotion } from "./faceDetector.js";
+import { ConfirmModal } from "./components/Modal.js";
 
 function playVerificationChime() {
   try {
@@ -87,6 +88,8 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [lastSuccess, setLastSuccess] = useState<AttendanceSuccessResult | null>(null);
+  const [pendingClockOut, setPendingClockOut] = useState<AttendanceSuccessResult | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<string>("");
   const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>([]);
@@ -253,6 +256,14 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
       }
 
       if (data.match && data.employee_id) {
+        // Active shift detected: requires employee confirmation to clock out
+        if (data.action_required === "CONFIRM_CLOCK_OUT" || data.punch_type === "PENDING_OUT") {
+          setPendingClockOut(data);
+          setStatusMessage(`Active shift detected for ${data.employee_id}. Awaiting confirmation...`);
+          if (onStatusChange) onStatusChange("CONFIRM_CLOCK_OUT");
+          return;
+        }
+
         setLastSuccess(data);
 
         // Smart status display
@@ -277,7 +288,7 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
           if (onStatusChange) onStatusChange("READY");
         }, 4000);
       } else {
-        const msg = data.message || "Face not recognized (>90% threshold required).";
+        const msg = data.message || "Face not recognized (biometric match below threshold).";
         setErrorBanner(msg);
         setStatusMessage("");
         if (onError) onError(msg);
@@ -296,14 +307,14 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
 
   // Hands-free auto-scan timer
   useEffect(() => {
-    if (!autoScan || !hasCamera || loading || lastSuccess) return;
+    if (!autoScan || !hasCamera || loading || lastSuccess || pendingClockOut) return;
     const interval = setInterval(() => {
-      if (!loading && !lastSuccess) {
+      if (!loading && !lastSuccess && !pendingClockOut) {
         handleVerify();
       }
     }, 2800);
     return () => clearInterval(interval);
-  }, [autoScan, hasCamera, loading, lastSuccess, selectedPunchType]);
+  }, [autoScan, hasCamera, loading, lastSuccess, pendingClockOut, selectedPunchType]);
 
   // Color tokens based on theme
   const isLight = theme === "light";
@@ -927,6 +938,80 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
           Align your face in the frame and tap Verify
         </p>
       </div>
+
+      {/* Clock-Out Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!pendingClockOut}
+        title="Confirm Clock-Out"
+        message={
+          <span>
+            Hello <strong style={{ color: "#38bdf8", fontFamily: "monospace" }}>{pendingClockOut?.employee_id}</strong>! You have an active shift of{" "}
+            <strong style={{ color: "#f59e0b" }}>
+              {pendingClockOut?.session_duration_minutes != null
+                ? `${Math.floor(pendingClockOut.session_duration_minutes / 60)}h ${pendingClockOut.session_duration_minutes % 60}m`
+                : "in progress"}
+            </strong>
+            . Are you sure you want to clock out now?
+          </span>
+        }
+        confirmLabel="Confirm Clock-Out"
+        cancelLabel="Keep Working / Cancel"
+        danger={false}
+        countdownSeconds={10}
+        theme={theme}
+        loading={confirmLoading}
+        onCancel={() => {
+          setPendingClockOut(null);
+          setStatusMessage("");
+          if (onStatusChange) onStatusChange("READY");
+        }}
+        onConfirm={async () => {
+          if (!pendingClockOut?.employee_id) return;
+          setConfirmLoading(true);
+          try {
+            const endpoint = `${apiUrl.replace(/\/$/, "")}/api/v1/verify`;
+            const response = await fetch(endpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-api-key": effectiveApiKey,
+              },
+              body: JSON.stringify({
+                workspace_id: effectiveWorkspaceId,
+                employee_id: pendingClockOut.employee_id,
+                punch_type: "OUT",
+                confirmed: true,
+              }),
+            });
+
+            const confirmedData = await response.json();
+            if (!response.ok) {
+              throw new Error(confirmedData.message || "Failed to confirm clock out");
+            }
+
+            setPendingClockOut(null);
+            setLastSuccess(confirmedData);
+            const duration = confirmedData.session_duration_minutes != null
+              ? ` (${Math.floor(confirmedData.session_duration_minutes / 60)}h ${confirmedData.session_duration_minutes % 60}m)`
+              : "";
+            setStatusMessage(`Clock Out verified: ${confirmedData.employee_id}${duration}`);
+            if (enableSound) playVerificationChime();
+            if (onSuccess) onSuccess(confirmedData);
+            if (onStatusChange) onStatusChange("SUCCESS");
+
+            setTimeout(() => {
+              setLastSuccess(null);
+              setStatusMessage("");
+              if (onStatusChange) onStatusChange("READY");
+            }, 4000);
+          } catch (err: any) {
+            setErrorBanner(err.message || "Error confirming clock out");
+            setPendingClockOut(null);
+          } finally {
+            setConfirmLoading(false);
+          }
+        }}
+      />
     </div>
   );
 };

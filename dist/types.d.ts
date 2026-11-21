@@ -9,6 +9,7 @@ export interface AttendanceSuccessResult {
     timestamp: string;
     punch_type?: string;
     session_duration_minutes?: number;
+    action_required?: string;
     message: string;
 }
 export interface EnrollmentSuccessResult {
@@ -99,7 +100,7 @@ export interface SureClockManagerProps {
     theme?: KioskTheme;
     styles?: KioskCustomStyles;
     className?: string;
-    initialTab?: "kiosk" | "employees" | "faces" | "analytics";
+    initialTab?: "kiosk" | "logs" | "employees" | "faces" | "analytics";
     title?: string;
     showKioskTab?: boolean;
     kioskProps?: Partial<FaceAttendanceKioskProps>;

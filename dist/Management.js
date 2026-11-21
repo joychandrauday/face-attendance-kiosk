@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { AnalyticsDashboard } from "./AnalyticsDashboard.js";
+import { AttendanceLogs } from "./AttendanceLogs.js";
 import { EmployeeTable } from "./EmployeeTable.js";
 import { FaceEnrollment } from "./Enrollment.js";
 import { FaceAttendanceKiosk } from "./FaceAttendanceKiosk.js";
@@ -9,6 +10,7 @@ export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, a
     const effectiveApiKey = apiKey || api_key || "";
     const effectiveWorkspaceId = workspaceId || workspace_id || "";
     const [activeTab, setActiveTab] = useState(initialTab);
+    const [refreshKey, setRefreshKey] = useState(0);
     const [selectedEmpForFaces, setSelectedEmpForFaces] = useState("");
     const [showEnrollModal, setShowEnrollModal] = useState(false);
     const [enrollTargetEmpId, setEnrollTargetEmpId] = useState("");
@@ -93,7 +95,18 @@ export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, a
                         fontWeight: 600,
                         cursor: "pointer",
                         transition: "all 0.2s ease",
-                    } }, "\uD83D\uDCF8 Attendance Kiosk")),
+                    } }, "\uD83D\uDCF8 Kiosk")),
+                React.createElement("button", { type: "button", onClick: () => setActiveTab("logs"), style: {
+                        padding: "6px 14px",
+                        borderRadius: "8px",
+                        border: "none",
+                        backgroundColor: activeTab === "logs" ? themeTokens.tabActive : "transparent",
+                        color: activeTab === "logs" ? "#ffffff" : themeTokens.textMuted,
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                    } }, "\uD83D\uDCCB Logs"),
                 React.createElement("button", { type: "button", onClick: () => setActiveTab("employees"), style: {
                         padding: "6px 14px",
                         borderRadius: "8px",
@@ -115,7 +128,7 @@ export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, a
                         fontWeight: 600,
                         cursor: "pointer",
                         transition: "all 0.2s ease",
-                    } }, "\uD83D\uDC64 Biometric Faces"),
+                    } }, "\uD83D\uDC64 Faces"),
                 React.createElement("button", { type: "button", onClick: () => setActiveTab("analytics"), style: {
                         padding: "6px 14px",
                         borderRadius: "8px",
@@ -126,16 +139,18 @@ export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, a
                         fontWeight: 600,
                         cursor: "pointer",
                         transition: "all 0.2s ease",
-                    } }, "\uD83D\uDCCA Analytics & Charts"))),
+                    } }, "\uD83D\uDCCA Analytics"))),
         activeTab === "kiosk" && showKioskTab && (React.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "12px 0" } },
             React.createElement("div", { style: { maxWidth: "480px", width: "100%", margin: "0 auto" } },
                 React.createElement(FaceAttendanceKiosk, { apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme, buttonLabel: "Verify Attendance", enableSound: true, mirror: true, onSuccess: (result) => {
+                        setRefreshKey((k) => k + 1);
                         if (onAttendance)
                             onAttendance(result);
                     }, ...kioskProps })))),
+        activeTab === "logs" && (React.createElement(AttendanceLogs, { key: `logs-${refreshKey}`, apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme, autoRefresh: true })),
         activeTab === "employees" && (React.createElement(EmployeeTable, { apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme, onEnrollNew: () => handleOpenEnroll(), onSelectEmployee: handleSelectEmployeeForFaces })),
         activeTab === "faces" && (React.createElement(FaceTable, { apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, selectedEmployeeId: selectedEmpForFaces, apiUrl: apiUrl, theme: theme, onReEnroll: (empId) => handleOpenEnroll(empId) })),
-        activeTab === "analytics" && (React.createElement(AnalyticsDashboard, { apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme })),
+        activeTab === "analytics" && (React.createElement(AnalyticsDashboard, { key: `analytics-${refreshKey}`, apiKey: effectiveApiKey, workspaceId: effectiveWorkspaceId, apiUrl: apiUrl, theme: theme })),
         showEnrollModal && (React.createElement("div", { style: {
                 position: "fixed",
                 inset: 0,
