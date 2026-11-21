@@ -28,7 +28,7 @@ export default function App() {
               SureClock Biometric SDK Preview
             </h1>
             <p style={{ margin: "6px 0 0", color: "#94a3b8", fontSize: "0.95rem" }}>
-              Enterprise test harness for <code>@karalasoft/face-attendance-kiosk</code> v1.3.0
+              Enterprise test harness for <code>@karalasoft/face-attendance-kiosk</code> v1.4.0
             </p>
           </div>
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>

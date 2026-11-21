@@ -141,13 +141,21 @@ export async function cropAlignedFace(
           ctx.translate(outputSize / 2, outputSize / 2);
           ctx.rotate(-angle);
 
+          // Safe source bounds clamping to prevent IndexSizeError on iOS Safari / WebKit
+          const rawSx = centerX - pW / 2;
+          const rawSy = centerY - pH / 2;
+          const sx = Math.max(0, Math.min(vW - 10, rawSx));
+          const sy = Math.max(0, Math.min(vH - 10, rawSy));
+          const sw = Math.max(10, Math.min(vW - sx, pW));
+          const sh = Math.max(10, Math.min(vH - sy, pH));
+
           // Draw the face crop tightly centered
           ctx.drawImage(
             video,
-            centerX - pW / 2,
-            centerY - pH / 2,
-            pW,
-            pH,
+            sx,
+            sy,
+            sw,
+            sh,
             -outputSize / 2,
             -outputSize / 2,
             outputSize,
