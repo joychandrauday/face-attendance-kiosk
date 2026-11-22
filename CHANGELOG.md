@@ -2,7 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.4.0] - 2026-11-21
+## [1.7.1] - 2026-11-22
+### Added & Improved
+- **Signed Clock-Out Security**: Added HMAC-SHA256 `clock_out_token` handling during clock-out confirmation dispatch.
+- **Frontend HUD Deslop**: Removed zero-offset colored blur/glow halos from camera viewfinder and enrollment reticles, enforcing crisp 1px borders and high-contrast status indicators.
+- **Timezone Resilience**: Enhanced 12-hour formatting and workspace timezone-aware log sync.
+
+## [1.7.0] - 2026-11-21
 ### Added & Upgraded
 - **MediaPipe BlazeFace Face Detection & Alignment (`faceDetector.ts`)**:
   - Tightly detects the face bounding box and extracts 6 facial landmarks directly on the client device (GPU/WASM in ~3ms).
