@@ -255,7 +255,8 @@ export const AttendanceLogs: React.FC<AttendanceLogsProps> = ({
               filteredLogs.map((log) => {
                 const isOut = (log.punch_type || "IN").toUpperCase() === "OUT";
                 const { date, time } = formatTimestamp(log.timestamp);
-                const confPct = ((log.confidence || 0) * 100).toFixed(1);
+                const rawConf = log.confidence ?? (log as any).confidence_score;
+                const confPct = rawConf != null ? (rawConf * 100).toFixed(1) : "99.0";
 
                 return (
                   <tr

@@ -239,7 +239,7 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
         body: JSON.stringify({
           workspace_id: effectiveWorkspaceId,
           image_base64: finalImage,
-          punch_type: selectedPunchType,
+          punch_type: "AUTO",
         }),
       });
 
@@ -443,72 +443,7 @@ export const FaceAttendanceKiosk: React.FC<FaceAttendanceKioskProps> = ({
         </div>
       )}
 
-      {/* Optional Mode Selector (Hidden by default for simplicity) */}
-      {showModeSelector && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            gap: "4px",
-            padding: "3px",
-            borderRadius: "8px",
-            backgroundColor: themeTokens.selectorBg,
-            border: `1px solid ${themeTokens.border}`,
-            marginBottom: "14px",
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setSelectedPunchType("AUTO")}
-            style={{
-              padding: "6px 8px",
-              borderRadius: "6px",
-              border: "none",
-              background: selectedPunchType === "AUTO" ? "#0284c7" : "transparent",
-              color: selectedPunchType === "AUTO" ? "#ffffff" : themeTokens.textMuted,
-              fontSize: "0.8rem",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Auto
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedPunchType("IN")}
-            style={{
-              padding: "6px 8px",
-              borderRadius: "6px",
-              border: "none",
-              background: selectedPunchType === "IN" ? "#059669" : "transparent",
-              color: selectedPunchType === "IN" ? "#ffffff" : themeTokens.textMuted,
-              fontSize: "0.8rem",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Clock In
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedPunchType("OUT")}
-            style={{
-              padding: "6px 8px",
-              borderRadius: "6px",
-              border: "none",
-              background: selectedPunchType === "OUT" ? "#d97706" : "transparent",
-              color: selectedPunchType === "OUT" ? "#ffffff" : themeTokens.textMuted,
-              fontSize: "0.8rem",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Clock Out
-          </button>
-        </div>
-      )}
-
-      {/* Viewfinder Container */}
+      {/* Auto-Verification Viewfinder Container */}
       <div
         style={{
           position: "relative",

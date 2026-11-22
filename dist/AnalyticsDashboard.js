@@ -225,23 +225,26 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
                             React.createElement("th", { style: { padding: "10px 12px" } }, "First In (12h)"),
                             React.createElement("th", { style: { padding: "10px 12px" } }, "Last Out (12h)"),
                             React.createElement("th", { style: { padding: "10px 12px" } }, "Shifts"),
-                            React.createElement("th", { style: { padding: "10px 12px" } }, "Daily Total"),
-                            React.createElement("th", { style: { padding: "10px 12px" } }, "Status"))),
+                            React.createElement("th", { style: { padding: "10px 12px" } }, "Working Hours"),
+                            React.createElement("th", { style: { padding: "10px 12px" } }, "Confidence"),
+                            React.createElement("th", { style: { padding: "10px 12px" } }, "Shift Status"))),
                     React.createElement("tbody", null, dailyLoading ? (React.createElement("tr", null,
-                        React.createElement("td", { colSpan: 7, style: { padding: "24px", textAlign: "center", color: textMuted } }, "Loading employee work hours breakdown..."))) : dailyHours.length === 0 ? (React.createElement("tr", null,
-                        React.createElement("td", { colSpan: 7, style: { padding: "24px", textAlign: "center", color: textMuted } },
+                        React.createElement("td", { colSpan: 8, style: { padding: "24px", textAlign: "center", color: textMuted } }, "Loading employee work hours breakdown..."))) : dailyHours.length === 0 ? (React.createElement("tr", null,
+                        React.createElement("td", { colSpan: 8, style: { padding: "24px", textAlign: "center", color: textMuted } },
                             "No work session records found for the selected ",
                             daysRange,
                             "-day period."))) : (dailyHours.map((row, i) => {
                         const empDisplay = row.employee_name || row.employee_id;
                         const isFullDay = row.total_hours >= 8.0;
+                        const isOnDuty = row.has_open_session || row.shift_status === "OPEN";
+                        const isAutoClosed = row.shift_status === "AUTO_CLOSED";
                         return (React.createElement("tr", { key: `${row.employee_id}-${row.date}-${i}`, style: { borderBottom: `1px solid ${border}` } },
                             React.createElement("td", { style: { padding: "10px 12px", fontWeight: 600 } }, formatDate(row.date, timezone)),
                             React.createElement("td", { style: { padding: "10px 12px" } },
                                 React.createElement("div", { style: { fontWeight: 600 } }, empDisplay),
                                 row.employee_name && (React.createElement("div", { style: { fontSize: "0.7rem", color: textMuted, fontFamily: "monospace" } }, row.employee_id))),
                             React.createElement("td", { style: { padding: "10px 12px", fontFamily: "monospace", color: "#10b981" } }, format12HourTime(row.first_clock_in, timezone, false)),
-                            React.createElement("td", { style: { padding: "10px 12px", fontFamily: "monospace" } }, row.has_open_session ? (React.createElement("span", { style: {
+                            React.createElement("td", { style: { padding: "10px 12px", fontFamily: "monospace" } }, isOnDuty ? (React.createElement("span", { style: {
                                     padding: "2px 8px",
                                     borderRadius: "10px",
                                     fontSize: "0.7rem",
@@ -258,29 +261,85 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
                                     React.createElement("span", { style: {
                                             fontWeight: 700,
                                             fontFamily: "monospace",
-                                            color: isFullDay ? "#10b981" : row.has_open_session ? "#38bdf8" : textPrimary,
+                                            color: isFullDay ? "#10b981" : isOnDuty ? "#38bdf8" : textPrimary,
                                         } },
-                                        row.total_hours.toFixed(2),
-                                        "h"),
-                                    React.createElement("span", { style: { fontSize: "0.7rem", color: textMuted } },
+                                        Math.floor(row.total_minutes / 60),
+                                        "h ",
+                                        row.total_minutes % 60,
+                                        "m"),
+                                    React.createElement("span", { style: { fontSize: "0.7rem", color: textMuted, fontFamily: "monospace" } },
                                         "(",
-                                        row.total_minutes,
-                                        "m)"))),
-                            React.createElement("td", { style: { padding: "10px 12px" } }, row.has_open_session ? (React.createElement("span", { style: {
-                                    padding: "2px 8px",
+                                        row.total_hours.toFixed(2),
+                                        " hrs)"))),
+                            React.createElement("td", { style: { padding: "10px 12px", fontFamily: "monospace" } }, (() => {
+                                const conf = row.average_confidence;
+                                if (conf == null) {
+                                    return React.createElement("span", { style: { color: textMuted } }, "-");
+                                }
+                                const pct = (conf * 100).toFixed(1);
+                                const num = conf * 100;
+                                const color = num >= 90 ? "#10b981" : num >= 75 ? "#38bdf8" : "#f59e0b";
+                                return (React.createElement("span", { style: {
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "5px",
+                                        padding: "2px 8px",
+                                        borderRadius: "6px",
+                                        backgroundColor: isLight ? "#f1f5f9" : "#0d1527",
+                                        border: `1px solid ${border}`,
+                                        fontWeight: 600,
+                                        color,
+                                    } },
+                                    React.createElement("span", { style: {
+                                            width: "6px",
+                                            height: "6px",
+                                            borderRadius: "50%",
+                                            backgroundColor: color,
+                                        } }),
+                                    pct,
+                                    "%"));
+                            })()),
+                            React.createElement("td", { style: { padding: "10px 12px" } }, isOnDuty ? (React.createElement("span", { style: {
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "5px",
+                                    padding: "3px 10px",
                                     borderRadius: "10px",
-                                    fontSize: "0.7rem",
+                                    fontSize: "0.72rem",
                                     fontWeight: 700,
                                     backgroundColor: "rgba(14, 165, 233, 0.15)",
                                     color: "#38bdf8",
-                                } }, "IN PROGRESS")) : (React.createElement("span", { style: {
-                                    padding: "2px 8px",
+                                    border: "1px solid rgba(14, 165, 233, 0.3)",
+                                } },
+                                React.createElement("span", { style: {
+                                        width: "6px",
+                                        height: "6px",
+                                        borderRadius: "50%",
+                                        backgroundColor: "#38bdf8",
+                                    } }),
+                                "ON-DUTY")) : isAutoClosed ? (React.createElement("span", { style: {
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "5px",
+                                    padding: "3px 10px",
                                     borderRadius: "10px",
-                                    fontSize: "0.7rem",
+                                    fontSize: "0.72rem",
+                                    fontWeight: 700,
+                                    backgroundColor: "rgba(245, 158, 11, 0.15)",
+                                    color: "#f59e0b",
+                                    border: "1px solid rgba(245, 158, 11, 0.3)",
+                                } }, "AUTO-CLOSED")) : (React.createElement("span", { style: {
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "5px",
+                                    padding: "3px 10px",
+                                    borderRadius: "10px",
+                                    fontSize: "0.72rem",
                                     fontWeight: 700,
                                     backgroundColor: "rgba(16, 185, 129, 0.15)",
                                     color: "#10b981",
-                                } }, "COMPLETED")))));
+                                    border: "1px solid rgba(16, 185, 129, 0.3)",
+                                } }, "\u2713 COMPLETED")))));
                     })))))),
         React.createElement("div", { style: {
                 padding: "20px",
@@ -355,7 +414,29 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
                                         backgroundColor: isOut ? "rgba(245, 158, 11, 0.15)" : "rgba(16, 185, 129, 0.15)",
                                         color: isOut ? "#f59e0b" : "#10b981",
                                     } }, log.punch_type || "PUNCH")),
-                            React.createElement("td", { style: { padding: "10px 12px", fontFamily: "monospace" } }, log.confidence ? `${(log.confidence * 100).toFixed(1)}%` : "-"),
+                            React.createElement("td", { style: { padding: "10px 12px", fontFamily: "monospace" } }, (() => {
+                                const confVal = log.confidence ?? log.confidence_score;
+                                if (confVal == null)
+                                    return React.createElement("span", { style: { color: textMuted } }, "-");
+                                const pct = (confVal * 100).toFixed(1);
+                                const num = confVal * 100;
+                                const col = num >= 90 ? "#10b981" : num >= 75 ? "#38bdf8" : "#f59e0b";
+                                return (React.createElement("span", { style: {
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "5px",
+                                        color: col,
+                                        fontWeight: 600,
+                                    } },
+                                    React.createElement("span", { style: {
+                                            width: "6px",
+                                            height: "6px",
+                                            borderRadius: "50%",
+                                            backgroundColor: col,
+                                        } }),
+                                    pct,
+                                    "%"));
+                            })()),
                             React.createElement("td", { style: { padding: "10px 12px", color: "#10b981" } }, "\u2713 Verified")));
                     }))))))));
 };

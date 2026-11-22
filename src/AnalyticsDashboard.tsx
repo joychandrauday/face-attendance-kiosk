@@ -375,20 +375,21 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 <th style={{ padding: "10px 12px" }}>First In (12h)</th>
                 <th style={{ padding: "10px 12px" }}>Last Out (12h)</th>
                 <th style={{ padding: "10px 12px" }}>Shifts</th>
-                <th style={{ padding: "10px 12px" }}>Daily Total</th>
-                <th style={{ padding: "10px 12px" }}>Status</th>
+                <th style={{ padding: "10px 12px" }}>Working Hours</th>
+                <th style={{ padding: "10px 12px" }}>Confidence</th>
+                <th style={{ padding: "10px 12px" }}>Shift Status</th>
               </tr>
             </thead>
             <tbody>
               {dailyLoading ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: "24px", textAlign: "center", color: textMuted }}>
+                  <td colSpan={8} style={{ padding: "24px", textAlign: "center", color: textMuted }}>
                     Loading employee work hours breakdown...
                   </td>
                 </tr>
               ) : dailyHours.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: "24px", textAlign: "center", color: textMuted }}>
+                  <td colSpan={8} style={{ padding: "24px", textAlign: "center", color: textMuted }}>
                     No work session records found for the selected {daysRange}-day period.
                   </td>
                 </tr>
@@ -396,6 +397,9 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 dailyHours.map((row, i) => {
                   const empDisplay = row.employee_name || row.employee_id;
                   const isFullDay = row.total_hours >= 8.0;
+                  const isOnDuty = row.has_open_session || row.shift_status === "OPEN";
+                  const isAutoClosed = row.shift_status === "AUTO_CLOSED";
+
                   return (
                     <tr
                       key={`${row.employee_id}-${row.date}-${i}`}
@@ -416,7 +420,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                         {format12HourTime(row.first_clock_in, timezone, false)}
                       </td>
                       <td style={{ padding: "10px 12px", fontFamily: "monospace" }}>
-                        {row.has_open_session ? (
+                        {isOnDuty ? (
                           <span
                             style={{
                               padding: "2px 8px",
@@ -446,42 +450,111 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                             style={{
                               fontWeight: 700,
                               fontFamily: "monospace",
-                              color: isFullDay ? "#10b981" : row.has_open_session ? "#38bdf8" : textPrimary,
+                              color: isFullDay ? "#10b981" : isOnDuty ? "#38bdf8" : textPrimary,
                             }}
                           >
-                            {row.total_hours.toFixed(2)}h
+                            {Math.floor(row.total_minutes / 60)}h {row.total_minutes % 60}m
                           </span>
-                          <span style={{ fontSize: "0.7rem", color: textMuted }}>
-                            ({row.total_minutes}m)
+                          <span style={{ fontSize: "0.7rem", color: textMuted, fontFamily: "monospace" }}>
+                            ({row.total_hours.toFixed(2)} hrs)
                           </span>
                         </div>
                       </td>
+                      <td style={{ padding: "10px 12px", fontFamily: "monospace" }}>
+                        {(() => {
+                          const conf = row.average_confidence;
+                          if (conf == null) {
+                            return <span style={{ color: textMuted }}>-</span>;
+                          }
+                          const pct = (conf * 100).toFixed(1);
+                          const num = conf * 100;
+                          const color = num >= 90 ? "#10b981" : num >= 75 ? "#38bdf8" : "#f59e0b";
+                          return (
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "5px",
+                                padding: "2px 8px",
+                                borderRadius: "6px",
+                                backgroundColor: isLight ? "#f1f5f9" : "#0d1527",
+                                border: `1px solid ${border}`,
+                                fontWeight: 600,
+                                color,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: "6px",
+                                  height: "6px",
+                                  borderRadius: "50%",
+                                  backgroundColor: color,
+                                }}
+                              />
+                              {pct}%
+                            </span>
+                          );
+                        })()}
+                      </td>
                       <td style={{ padding: "10px 12px" }}>
-                        {row.has_open_session ? (
+                        {isOnDuty ? (
                           <span
                             style={{
-                              padding: "2px 8px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "5px",
+                              padding: "3px 10px",
                               borderRadius: "10px",
-                              fontSize: "0.7rem",
+                              fontSize: "0.72rem",
                               fontWeight: 700,
                               backgroundColor: "rgba(14, 165, 233, 0.15)",
                               color: "#38bdf8",
+                              border: "1px solid rgba(14, 165, 233, 0.3)",
                             }}
                           >
-                            IN PROGRESS
+                            <span
+                              style={{
+                                width: "6px",
+                                height: "6px",
+                                borderRadius: "50%",
+                                backgroundColor: "#38bdf8",
+                              }}
+                            />
+                            ON-DUTY
+                          </span>
+                        ) : isAutoClosed ? (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "5px",
+                              padding: "3px 10px",
+                              borderRadius: "10px",
+                              fontSize: "0.72rem",
+                              fontWeight: 700,
+                              backgroundColor: "rgba(245, 158, 11, 0.15)",
+                              color: "#f59e0b",
+                              border: "1px solid rgba(245, 158, 11, 0.3)",
+                            }}
+                          >
+                            AUTO-CLOSED
                           </span>
                         ) : (
                           <span
                             style={{
-                              padding: "2px 8px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "5px",
+                              padding: "3px 10px",
                               borderRadius: "10px",
-                              fontSize: "0.7rem",
+                              fontSize: "0.72rem",
                               fontWeight: 700,
                               backgroundColor: "rgba(16, 185, 129, 0.15)",
                               color: "#10b981",
+                              border: "1px solid rgba(16, 185, 129, 0.3)",
                             }}
                           >
-                            COMPLETED
+                            ✓ COMPLETED
                           </span>
                         )}
                       </td>
@@ -624,7 +697,34 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                         </span>
                       </td>
                       <td style={{ padding: "10px 12px", fontFamily: "monospace" }}>
-                        {log.confidence ? `${(log.confidence * 100).toFixed(1)}%` : "-"}
+                        {(() => {
+                          const confVal = log.confidence ?? (log as any).confidence_score;
+                          if (confVal == null) return <span style={{ color: textMuted }}>-</span>;
+                          const pct = (confVal * 100).toFixed(1);
+                          const num = confVal * 100;
+                          const col = num >= 90 ? "#10b981" : num >= 75 ? "#38bdf8" : "#f59e0b";
+                          return (
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "5px",
+                                color: col,
+                                fontWeight: 600,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: "6px",
+                                  height: "6px",
+                                  borderRadius: "50%",
+                                  backgroundColor: col,
+                                }}
+                              />
+                              {pct}%
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td style={{ padding: "10px 12px", color: "#10b981" }}>
                         ✓ Verified

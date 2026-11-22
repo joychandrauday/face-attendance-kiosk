@@ -29,7 +29,8 @@ export interface AttendanceLogRecord {
     employee_name?: string;
     workspace_id: string;
     punch_type: string;
-    confidence: number;
+    confidence?: number;
+    confidence_score?: number;
     timestamp: string;
     status?: string;
 }
@@ -80,6 +81,8 @@ export interface EmployeeDailyHoursRecord {
     total_minutes: number;
     total_hours: number;
     has_open_session: boolean;
+    shift_status?: string;
+    average_confidence?: number | null;
 }
 /** Fetch aggregated day-wise total work hours of employees */
 export declare function fetchEmployeeDailyHours(apiKey: string, workspaceId: string, employeeId?: string, startDate?: string, endDate?: string, apiUrl?: string): Promise<EmployeeDailyHoursRecord[]>;

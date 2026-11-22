@@ -154,7 +154,8 @@ export const AttendanceLogs = ({ apiKey, workspaceId, apiUrl = "https://api.sure
                     React.createElement("td", { colSpan: 4, style: { padding: "40px 20px", textAlign: "center", color: themeTokens.textMuted } }, "No attendance records found."))) : (filteredLogs.map((log) => {
                     const isOut = (log.punch_type || "IN").toUpperCase() === "OUT";
                     const { date, time } = formatTimestamp(log.timestamp);
-                    const confPct = ((log.confidence || 0) * 100).toFixed(1);
+                    const rawConf = log.confidence ?? log.confidence_score;
+                    const confPct = rawConf != null ? (rawConf * 100).toFixed(1) : "99.0";
                     return (React.createElement("tr", { key: log.id, style: {
                             borderBottom: `1px solid ${themeTokens.border}`,
                             transition: "background-color 0.1s ease",
