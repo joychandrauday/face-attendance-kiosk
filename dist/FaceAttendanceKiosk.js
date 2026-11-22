@@ -355,7 +355,7 @@ export const FaceAttendanceKiosk = ({ apiKey, api_key, workspaceId, workspace_id
                             height: "6px",
                             borderRadius: "50%",
                             backgroundColor: hasCamera ? "#10b981" : "#ef4444",
-                            boxShadow: hasCamera ? "0 0 6px #10b981" : "none",
+                            border: `1px solid ${hasCamera ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.4)"}`,
                         } }),
                     hasCamera ? "Ready" : "Offline")))),
         showModeSelector && (React.createElement("div", { style: {
@@ -495,7 +495,6 @@ export const FaceAttendanceKiosk = ({ apiKey, api_key, workspaceId, workspace_id
                     right: 0,
                     height: "2px",
                     backgroundColor: "#38bdf8",
-                    boxShadow: "0 0 8px #0284c7",
                     animation: "sureclockScanLine 1.4s ease-in-out infinite",
                     zIndex: 10,
                 } })),
@@ -726,6 +725,7 @@ export const FaceAttendanceKiosk = ({ apiKey, api_key, workspaceId, workspace_id
                             employee_id: pendingClockOut.employee_id,
                             punch_type: "OUT",
                             confirmed: true,
+                            clock_out_token: pendingClockOut.clock_out_token,
                         }),
                     });
                     const confirmedData = await response.json();

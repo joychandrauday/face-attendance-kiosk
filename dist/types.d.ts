@@ -11,6 +11,7 @@ export interface AttendanceSuccessResult {
     punch_type?: string;
     session_duration_minutes?: number;
     action_required?: string;
+    clock_out_token?: string;
     message: string;
 }
 export interface EnrollmentSuccessResult {

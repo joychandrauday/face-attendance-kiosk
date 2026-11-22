@@ -1124,8 +1124,7 @@ export const FaceEnrollment: React.FC<FaceEnrollmentProps> = ({
                       width: "56%",
                       height: "76%",
                       borderRadius: "50%",
-                      border: `2px dashed ${centeringProgress > 60 ? "#10b981" : "rgba(255, 255, 255, 0.6)"}`,
-                      boxShadow: isCentered ? "0 0 24px rgba(16, 185, 129, 0.4)" : "none",
+                      border: `2px ${isCentered ? "solid #10b981" : "dashed rgba(255, 255, 255, 0.5)"}`,
                       transition: "all 0.3s ease",
                       pointerEvents: "none",
                       display: "flex",
@@ -1222,7 +1221,7 @@ export const FaceEnrollment: React.FC<FaceEnrollmentProps> = ({
                           height: "8px",
                           borderRadius: "50%",
                           backgroundColor: isCentered ? "#10b981" : "#0ea5e9",
-                          boxShadow: isCentered ? "0 0 8px #10b981" : "none",
+                          border: `1px solid ${isCentered ? "rgba(16, 185, 129, 0.5)" : "rgba(14, 165, 233, 0.5)"}`,
                           flexShrink: 0,
                         }}
                       />
