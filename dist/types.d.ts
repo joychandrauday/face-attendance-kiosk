@@ -129,6 +129,7 @@ export interface SureClockSettingsProps {
         name?: string;
         similarity_threshold?: number;
         timezone?: string;
+        logo_url?: string;
         audioChime?: boolean;
         shiftGuard?: boolean;
     }) => void;

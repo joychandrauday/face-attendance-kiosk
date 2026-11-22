@@ -66,6 +66,7 @@ export interface WorkspaceSettings {
     name: string;
     similarity_threshold?: number;
     timezone?: string;
+    logo_url?: string | null;
     enrolled_employees_count?: number;
     created_at?: string;
 }
@@ -84,11 +85,12 @@ export interface EmployeeDailyHoursRecord {
 export declare function fetchEmployeeDailyHours(apiKey: string, workspaceId: string, employeeId?: string, startDate?: string, endDate?: string, apiUrl?: string): Promise<EmployeeDailyHoursRecord[]>;
 /** Fetch workspace settings and similarity threshold */
 export declare function fetchWorkspaceSettings(apiKey: string, workspaceId: string, apiUrl?: string): Promise<WorkspaceSettings>;
-/** Update workspace settings (name, similarity threshold, and timezone) */
+/** Update workspace settings (name, similarity threshold, timezone, and logo URL) */
 export declare function updateWorkspaceSettings(apiKey: string, workspaceId: string, payload: {
     name?: string;
     similarity_threshold?: number;
     timezone?: string;
+    logo_url?: string;
 }, apiUrl?: string): Promise<WorkspaceSettings>;
 /** Ping biometric engine health */
 export declare function checkEngineHealth(apiUrl?: string): Promise<{

@@ -158,6 +158,7 @@ export interface WorkspaceSettings {
   name: string;
   similarity_threshold?: number;
   timezone?: string;
+  logo_url?: string | null;
   enrolled_employees_count?: number;
   created_at?: string;
 }
@@ -203,11 +204,11 @@ export async function fetchWorkspaceSettings(
   return await apiRequest<WorkspaceSettings>(endpoint, apiKey, { method: "GET" });
 }
 
-/** Update workspace settings (name, similarity threshold, and timezone) */
+/** Update workspace settings (name, similarity threshold, timezone, and logo URL) */
 export async function updateWorkspaceSettings(
   apiKey: string,
   workspaceId: string,
-  payload: { name?: string; similarity_threshold?: number; timezone?: string },
+  payload: { name?: string; similarity_threshold?: number; timezone?: string; logo_url?: string },
   apiUrl = "https://api.sureclock.karalasoft.com"
 ): Promise<WorkspaceSettings> {
   const base = apiUrl.replace(/\/$/, "");

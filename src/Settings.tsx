@@ -31,6 +31,7 @@ export const SureClockSettings: React.FC<SureClockSettingsProps> = ({
   const effectiveSecKey = secretKey || (effectiveApiKey.startsWith("sk_") ? effectiveApiKey : "");
 
   const [workspaceName, setWorkspaceName] = useState<string>("");
+  const [logoUrl, setLogoUrl] = useState<string>("");
   const [threshold, setThreshold] = useState<number>(0.68);
   const [timezone, setTimezone] = useState<string>(propTimezone || DEFAULT_TIMEZONE);
   const [audioChime, setAudioChime] = useState<boolean>(true);
@@ -68,6 +69,7 @@ export const SureClockSettings: React.FC<SureClockSettingsProps> = ({
       try {
         const data = await fetchWorkspaceSettings(effectiveApiKey, effectiveWorkspaceId, apiUrl);
         if (data.name) setWorkspaceName(data.name);
+        if (data.logo_url) setLogoUrl(data.logo_url);
         if (typeof data.similarity_threshold === "number") setThreshold(data.similarity_threshold);
         if (data.timezone) setTimezone(data.timezone);
       } catch (_) {
@@ -107,6 +109,7 @@ export const SureClockSettings: React.FC<SureClockSettingsProps> = ({
           effectiveWorkspaceId,
           {
             name: workspaceName.trim() || undefined,
+            logo_url: logoUrl.trim() || undefined,
             similarity_threshold: threshold,
             timezone,
           },
@@ -117,6 +120,7 @@ export const SureClockSettings: React.FC<SureClockSettingsProps> = ({
       if (onSave) {
         onSave({
           name: workspaceName,
+          logo_url: logoUrl.trim() || undefined,
           similarity_threshold: threshold,
           timezone,
           audioChime,
@@ -218,6 +222,78 @@ export const SureClockSettings: React.FC<SureClockSettingsProps> = ({
                   outline: "none",
                 }}
               />
+            </div>
+
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    color: themeTokens.textMuted,
+                  }}
+                >
+                  Workspace Logo URL (Front-Desk Kiosk Branding)
+                </label>
+                {logoUrl && (
+                  <span style={{ fontSize: "0.7rem", color: "#10b981", fontWeight: 600 }}>
+                    Preview Ready
+                  </span>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <input
+                  type="url"
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                  placeholder="https://your-domain.com/assets/logo.png"
+                  disabled={loading}
+                  style={{
+                    flex: 1,
+                    padding: "10px 14px",
+                    borderRadius: "8px",
+                    border: `1px solid ${themeTokens.border}`,
+                    backgroundColor: themeTokens.inputBg,
+                    color: themeTokens.textPrimary,
+                    fontSize: "0.85rem",
+                    boxSizing: "border-box",
+                    outline: "none",
+                  }}
+                />
+                {logoUrl && (
+                  <div
+                    style={{
+                      width: "42px",
+                      height: "42px",
+                      borderRadius: "8px",
+                      border: `1px solid ${themeTokens.border}`,
+                      backgroundColor: themeTokens.cardBg,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      overflow: "hidden",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <img
+                      src={logoUrl}
+                      alt="Logo preview"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "100%",
+                        objectFit: "contain",
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+              <p style={{ margin: "4px 0 0 0", fontSize: "0.72rem", color: themeTokens.textMuted }}>
+                Displayed on the standby idle screen and verification popup on physical tablets and kiosks.
+              </p>
             </div>
 
             <div>

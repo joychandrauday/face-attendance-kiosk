@@ -9,6 +9,7 @@ export const SureClockSettings = ({ apiKey, api_key, workspaceId, workspace_id, 
     const effectivePubKey = publishableKey || (effectiveApiKey.startsWith("pk_") ? effectiveApiKey : "");
     const effectiveSecKey = secretKey || (effectiveApiKey.startsWith("sk_") ? effectiveApiKey : "");
     const [workspaceName, setWorkspaceName] = useState("");
+    const [logoUrl, setLogoUrl] = useState("");
     const [threshold, setThreshold] = useState(0.68);
     const [timezone, setTimezone] = useState(propTimezone || DEFAULT_TIMEZONE);
     const [audioChime, setAudioChime] = useState(true);
@@ -41,6 +42,8 @@ export const SureClockSettings = ({ apiKey, api_key, workspaceId, workspace_id, 
                 const data = await fetchWorkspaceSettings(effectiveApiKey, effectiveWorkspaceId, apiUrl);
                 if (data.name)
                     setWorkspaceName(data.name);
+                if (data.logo_url)
+                    setLogoUrl(data.logo_url);
                 if (typeof data.similarity_threshold === "number")
                     setThreshold(data.similarity_threshold);
                 if (data.timezone)
@@ -81,6 +84,7 @@ export const SureClockSettings = ({ apiKey, api_key, workspaceId, workspace_id, 
             if (effectiveApiKey && effectiveWorkspaceId) {
                 await updateWorkspaceSettings(effectiveApiKey, effectiveWorkspaceId, {
                     name: workspaceName.trim() || undefined,
+                    logo_url: logoUrl.trim() || undefined,
                     similarity_threshold: threshold,
                     timezone,
                 }, apiUrl);
@@ -88,6 +92,7 @@ export const SureClockSettings = ({ apiKey, api_key, workspaceId, workspace_id, 
             if (onSave) {
                 onSave({
                     name: workspaceName,
+                    logo_url: logoUrl.trim() || undefined,
                     similarity_threshold: threshold,
                     timezone,
                     audioChime,
@@ -161,6 +166,47 @@ export const SureClockSettings = ({ apiKey, api_key, workspaceId, workspace_id, 
                                 boxSizing: "border-box",
                                 outline: "none",
                             } })),
+                    React.createElement("div", null,
+                        React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" } },
+                            React.createElement("label", { style: {
+                                    display: "block",
+                                    fontSize: "0.78rem",
+                                    fontWeight: 600,
+                                    color: themeTokens.textMuted,
+                                } }, "Workspace Logo URL (Front-Desk Kiosk Branding)"),
+                            logoUrl && (React.createElement("span", { style: { fontSize: "0.7rem", color: "#10b981", fontWeight: 600 } }, "Preview Ready"))),
+                        React.createElement("div", { style: { display: "flex", gap: "12px", alignItems: "center" } },
+                            React.createElement("input", { type: "url", value: logoUrl, onChange: (e) => setLogoUrl(e.target.value), placeholder: "https://your-domain.com/assets/logo.png", disabled: loading, style: {
+                                    flex: 1,
+                                    padding: "10px 14px",
+                                    borderRadius: "8px",
+                                    border: `1px solid ${themeTokens.border}`,
+                                    backgroundColor: themeTokens.inputBg,
+                                    color: themeTokens.textPrimary,
+                                    fontSize: "0.85rem",
+                                    boxSizing: "border-box",
+                                    outline: "none",
+                                } }),
+                            logoUrl && (React.createElement("div", { style: {
+                                    width: "42px",
+                                    height: "42px",
+                                    borderRadius: "8px",
+                                    border: `1px solid ${themeTokens.border}`,
+                                    backgroundColor: themeTokens.cardBg,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    overflow: "hidden",
+                                    flexShrink: 0,
+                                } },
+                                React.createElement("img", { src: logoUrl, alt: "Logo preview", onError: (e) => {
+                                        e.target.style.display = "none";
+                                    }, style: {
+                                        maxWidth: "100%",
+                                        maxHeight: "100%",
+                                        objectFit: "contain",
+                                    } })))),
+                        React.createElement("p", { style: { margin: "4px 0 0 0", fontSize: "0.72rem", color: themeTokens.textMuted } }, "Displayed on the standby idle screen and verification popup on physical tablets and kiosks.")),
                     React.createElement("div", null,
                         React.createElement("label", { style: {
                                 display: "block",

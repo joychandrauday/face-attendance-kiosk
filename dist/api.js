@@ -79,7 +79,7 @@ export async function fetchWorkspaceSettings(apiKey, workspaceId, apiUrl = "http
     const endpoint = `${base}/api/v1/workspaces/${encodeURIComponent(workspaceId)}`;
     return await apiRequest(endpoint, apiKey, { method: "GET" });
 }
-/** Update workspace settings (name, similarity threshold, and timezone) */
+/** Update workspace settings (name, similarity threshold, timezone, and logo URL) */
 export async function updateWorkspaceSettings(apiKey, workspaceId, payload, apiUrl = "https://api.sureclock.karalasoft.com") {
     const base = apiUrl.replace(/\/$/, "");
     const endpoint = `${base}/api/v1/workspaces/${encodeURIComponent(workspaceId)}`;
