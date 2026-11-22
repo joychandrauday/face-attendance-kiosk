@@ -26,13 +26,16 @@ export interface AttendanceStatResult {
 export interface AttendanceLogRecord {
     id: string | number;
     employee_id: string;
-    employee_name?: string;
+    employee_name?: string | null;
     workspace_id: string;
     punch_type: string;
     confidence?: number;
     confidence_score?: number;
     timestamp: string;
     status?: string;
+    shift_status?: string | null;
+    duration_minutes?: number | null;
+    duration_hours?: number | null;
 }
 export interface RegisterFacePayload {
     workspace_id: string;

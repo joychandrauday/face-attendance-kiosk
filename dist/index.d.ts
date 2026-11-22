@@ -13,7 +13,7 @@ export { cropAlignedFace, computeFrameMicroMotion, getFaceDetector } from "./fac
 export type { FaceCropResult } from "./faceDetector.js";
 export * as api from "./api.js";
 export { fetchEmployees, deleteEmployee, registerFaceAngle, fetchAttendanceStats, fetchAttendanceLogs, fetchEmployeeDailyHours, fetchWorkspaceSettings, updateWorkspaceSettings, checkEngineHealth, } from "./api.js";
-export { DEFAULT_TIMEZONE, TIMEZONE_OPTIONS, format12HourTime, formatDate, format12HourDateTime, formatHourlyLabel, } from "./utils/time.js";
+export { DEFAULT_TIMEZONE, TIMEZONE_OPTIONS, format12HourTime, formatDate, format12HourDateTime, formatHourlyLabel, formatISODateInTimezone, } from "./utils/time.js";
 export type { TimezoneOption } from "./utils/time.js";
 export type { AttendanceSuccessResult, EnrollmentSuccessResult, FaceAttendanceKioskProps, FaceEnrollmentProps, SureClockManagerProps, SureClockSettingsProps, KioskCustomStyles, KioskTheme, PunchDirection, EnrollmentAngle, } from "./types.js";
 export type { EnrolledEmployee, AttendanceStatResult, AttendanceLogRecord, EmployeeDailyHoursRecord, RegisterFacePayload, RegisterFaceResponse, WorkspaceSettings, } from "./api.js";

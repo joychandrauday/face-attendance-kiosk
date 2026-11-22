@@ -17,6 +17,7 @@ import {
   format12HourTime,
   formatDate,
   formatHourlyLabel,
+  formatISODateInTimezone,
 } from "./utils/time.js";
 import {
   Bar,
@@ -62,14 +63,97 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   const textMuted = isLight ? "#64748b" : "#94a3b8";
   const accent = "#0ea5e9";
 
+  const formatDuration = (mins?: number | null, hours?: number | null) => {
+    if (mins != null && mins > 0) {
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return `${h}h ${m}m`;
+    }
+    if (hours != null && hours > 0) {
+      const totalM = Math.round(hours * 60);
+      const h = Math.floor(totalM / 60);
+      const m = totalM % 60;
+      return `${h}h ${m}m`;
+    }
+    if (mins === 0) return "0h 00m";
+    return "-";
+  };
+
+  const renderShiftStatusBadge = (status?: string | null) => {
+    const st = (status || "").toUpperCase();
+    if (st === "OPEN") {
+      return (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+            fontSize: "0.72rem",
+            fontWeight: 700,
+            padding: "2px 7px",
+            borderRadius: "10px",
+            backgroundColor: "rgba(14, 165, 233, 0.15)",
+            color: "#38bdf8",
+            border: "1px solid rgba(14, 165, 233, 0.3)",
+          }}
+        >
+          <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#38bdf8" }} />
+          ON-DUTY
+        </span>
+      );
+    }
+    if (st === "COMPLETED") {
+      return (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+            fontSize: "0.72rem",
+            fontWeight: 700,
+            padding: "2px 7px",
+            borderRadius: "10px",
+            backgroundColor: "rgba(16, 185, 129, 0.15)",
+            color: "#10b981",
+            border: "1px solid rgba(16, 185, 129, 0.3)",
+          }}
+        >
+          ✓ COMPLETED
+        </span>
+      );
+    }
+    if (st === "AUTO_CLOSED") {
+      return (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+            fontSize: "0.72rem",
+            fontWeight: 700,
+            padding: "2px 7px",
+            borderRadius: "10px",
+            backgroundColor: "rgba(245, 158, 11, 0.15)",
+            color: "#f59e0b",
+            border: "1px solid rgba(245, 158, 11, 0.3)",
+          }}
+        >
+          ⚠️ AUTO-CLOSED
+        </span>
+      );
+    }
+    return <span style={{ color: textMuted }}>-</span>;
+  };
+
   const loadBaseData = async () => {
     if (!apiKey || !workspaceId) return;
     setLoading(true);
     setError(null);
     try {
+      const todayDateStr = formatISODateInTimezone(new Date(), timezone);
       const [statsData, logsData, empData] = await Promise.all([
-        fetchAttendanceStats(apiKey, workspaceId, undefined, apiUrl).catch(() => null),
-        fetchAttendanceLogs(apiKey, workspaceId, 25, apiUrl).catch(() => []),
+        fetchAttendanceStats(apiKey, workspaceId, todayDateStr, apiUrl).catch(() => null),
+        fetchAttendanceLogs(apiKey, workspaceId, 50, apiUrl).catch(() => []),
         fetchEmployees(apiKey, workspaceId, apiUrl).catch(() => []),
       ]);
       setStats(statsData);
@@ -89,8 +173,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       const today = new Date();
       const past = new Date();
       past.setDate(today.getDate() - daysRange);
-      const startDateStr = past.toISOString().split("T")[0];
-      const endDateStr = today.toISOString().split("T")[0];
+      const startDateStr = formatISODateInTimezone(past, timezone);
+      const endDateStr = formatISODateInTimezone(today, timezone);
 
       const empFilter = selectedEmpId === "ALL" ? undefined : selectedEmpId;
       const data = await fetchEmployeeDailyHours(
@@ -111,11 +195,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
   useEffect(() => {
     loadBaseData();
-  }, [apiKey, workspaceId, apiUrl]);
+  }, [apiKey, workspaceId, apiUrl, timezone]);
 
   useEffect(() => {
     loadDailyHours();
-  }, [apiKey, workspaceId, apiUrl, selectedEmpId, daysRange]);
+  }, [apiKey, workspaceId, apiUrl, selectedEmpId, daysRange, timezone]);
 
   // Transform hourly breakdown into chart-ready data in 12-hour format
   const hourlyChartData = useMemo(() => {
@@ -646,32 +730,40 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.82rem" }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${border}`, color: textMuted }}>
+                <th style={{ padding: "10px 12px" }}>Date</th>
                 <th style={{ padding: "10px 12px" }}>Time (12h)</th>
                 <th style={{ padding: "10px 12px" }}>Employee</th>
                 <th style={{ padding: "10px 12px" }}>Direction</th>
+                <th style={{ padding: "10px 12px" }}>Working Hours</th>
+                <th style={{ padding: "10px 12px" }}>Shift Status</th>
                 <th style={{ padding: "10px 12px" }}>Confidence</th>
-                <th style={{ padding: "10px 12px" }}>Status</th>
+                <th style={{ padding: "10px 12px", textAlign: "right" }}>Status</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: "24px", textAlign: "center", color: textMuted }}>
+                  <td colSpan={8} style={{ padding: "24px", textAlign: "center", color: textMuted }}>
                     Loading attendance audit logs...
                   </td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: "24px", textAlign: "center", color: textMuted }}>
+                  <td colSpan={8} style={{ padding: "24px", textAlign: "center", color: textMuted }}>
                     No recent verification logs recorded yet.
                   </td>
                 </tr>
               ) : (
-                logs.slice(0, 10).map((log, i) => {
+                logs.slice(0, 15).map((log, i) => {
                   const isOut = log.punch_type === "OUT";
+                  const dateStr = formatDate(log.timestamp, timezone);
+                  const durationText = formatDuration(log.duration_minutes, log.duration_hours);
                   return (
                     <tr key={log.id || i} style={{ borderBottom: `1px solid ${border}` }}>
-                      <td style={{ padding: "10px 12px", fontFamily: "monospace", color: textMuted }}>
+                      <td style={{ padding: "10px 12px", whiteSpace: "nowrap", fontWeight: 600 }}>
+                        {dateStr}
+                      </td>
+                      <td style={{ padding: "10px 12px", fontFamily: "monospace", color: textMuted, whiteSpace: "nowrap" }}>
                         {format12HourTime(log.timestamp, timezone, true)}
                       </td>
                       <td style={{ padding: "10px 12px" }}>
@@ -696,7 +788,15 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                           {log.punch_type || "PUNCH"}
                         </span>
                       </td>
-                      <td style={{ padding: "10px 12px", fontFamily: "monospace" }}>
+                      <td style={{ padding: "10px 12px", fontFamily: "monospace", whiteSpace: "nowrap" }}>
+                        <span style={{ fontWeight: 600, color: durationText !== "-" ? textPrimary : textMuted }}>
+                          {durationText}
+                        </span>
+                      </td>
+                      <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
+                        {renderShiftStatusBadge(log.shift_status)}
+                      </td>
+                      <td style={{ padding: "10px 12px", fontFamily: "monospace", whiteSpace: "nowrap" }}>
                         {(() => {
                           const confVal = log.confidence ?? (log as any).confidence_score;
                           if (confVal == null) return <span style={{ color: textMuted }}>-</span>;
@@ -726,7 +826,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                           );
                         })()}
                       </td>
-                      <td style={{ padding: "10px 12px", color: "#10b981" }}>
+                      <td style={{ padding: "10px 12px", color: "#10b981", textAlign: "right", whiteSpace: "nowrap" }}>
                         ✓ Verified
                       </td>
                     </tr>

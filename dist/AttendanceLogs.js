@@ -70,6 +70,70 @@ export const AttendanceLogs = ({ apiKey, workspaceId, apiUrl = "https://api.sure
             time: format12HourTime(ts, timezone, true),
         };
     };
+    const formatDuration = (mins, hours) => {
+        if (mins != null && mins > 0) {
+            const h = Math.floor(mins / 60);
+            const m = mins % 60;
+            return `${h}h ${m}m`;
+        }
+        if (hours != null && hours > 0) {
+            const totalM = Math.round(hours * 60);
+            const h = Math.floor(totalM / 60);
+            const m = totalM % 60;
+            return `${h}h ${m}m`;
+        }
+        if (mins === 0)
+            return "0h 00m";
+        return "-";
+    };
+    const renderShiftStatusBadge = (status) => {
+        const st = (status || "").toUpperCase();
+        if (st === "OPEN") {
+            return (React.createElement("span", { style: {
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    fontSize: "0.74rem",
+                    fontWeight: 700,
+                    padding: "2px 8px",
+                    borderRadius: "10px",
+                    backgroundColor: "rgba(14, 165, 233, 0.15)",
+                    color: "#38bdf8",
+                    border: "1px solid rgba(14, 165, 233, 0.3)",
+                } },
+                React.createElement("span", { style: { width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#38bdf8" } }),
+                "ON-DUTY"));
+        }
+        if (st === "COMPLETED") {
+            return (React.createElement("span", { style: {
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "0.74rem",
+                    fontWeight: 700,
+                    padding: "2px 8px",
+                    borderRadius: "10px",
+                    backgroundColor: "rgba(16, 185, 129, 0.15)",
+                    color: "#10b981",
+                    border: "1px solid rgba(16, 185, 129, 0.3)",
+                } }, "\u2713 COMPLETED"));
+        }
+        if (st === "AUTO_CLOSED") {
+            return (React.createElement("span", { style: {
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "0.74rem",
+                    fontWeight: 700,
+                    padding: "2px 8px",
+                    borderRadius: "10px",
+                    backgroundColor: "rgba(245, 158, 11, 0.15)",
+                    color: "#f59e0b",
+                    border: "1px solid rgba(245, 158, 11, 0.3)",
+                } }, "\u26A0\uFE0F AUTO-CLOSED"));
+        }
+        return React.createElement("span", { style: { color: themeTokens.textMuted } }, "-");
+    };
     return (React.createElement("div", { className: `sureclock-attendance-logs ${className}`, style: {
             width: "100%",
             backgroundColor: themeTokens.surface,
@@ -145,22 +209,31 @@ export const AttendanceLogs = ({ apiKey, workspaceId, apiUrl = "https://api.sure
             React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: "0.84rem", textAlign: "left" } },
                 React.createElement("thead", null,
                     React.createElement("tr", { style: { backgroundColor: themeTokens.headerBg, borderBottom: `1px solid ${themeTokens.border}` } },
-                        React.createElement("th", { style: { padding: "12px 20px", color: themeTokens.textMuted, fontWeight: 600, width: "35%" } }, "Employee"),
-                        React.createElement("th", { style: { padding: "12px 16px", color: themeTokens.textMuted, fontWeight: 600, width: "20%" } }, "Direction"),
-                        React.createElement("th", { style: { padding: "12px 16px", color: themeTokens.textMuted, fontWeight: 600, width: "25%" } }, "Timestamp"),
-                        React.createElement("th", { style: { padding: "12px 20px", color: themeTokens.textMuted, fontWeight: 600, width: "20%", textAlign: "right" } }, "Biometric Confidence"))),
+                        React.createElement("th", { style: { padding: "12px 16px", color: themeTokens.textMuted, fontWeight: 600 } }, "Date"),
+                        React.createElement("th", { style: { padding: "12px 16px", color: themeTokens.textMuted, fontWeight: 600 } }, "Time (12h)"),
+                        React.createElement("th", { style: { padding: "12px 16px", color: themeTokens.textMuted, fontWeight: 600 } }, "Employee"),
+                        React.createElement("th", { style: { padding: "12px 16px", color: themeTokens.textMuted, fontWeight: 600 } }, "Direction"),
+                        React.createElement("th", { style: { padding: "12px 16px", color: themeTokens.textMuted, fontWeight: 600 } }, "Working Hours"),
+                        React.createElement("th", { style: { padding: "12px 16px", color: themeTokens.textMuted, fontWeight: 600 } }, "Shift Status"),
+                        React.createElement("th", { style: { padding: "12px 16px", color: themeTokens.textMuted, fontWeight: 600 } }, "Biometric Confidence"),
+                        React.createElement("th", { style: { padding: "12px 16px", color: themeTokens.textMuted, fontWeight: 600, textAlign: "right" } }, "Status"))),
                 React.createElement("tbody", null, loading && logs.length === 0 ? (React.createElement("tr", null,
-                    React.createElement("td", { colSpan: 4, style: { padding: "40px 20px", textAlign: "center", color: themeTokens.textMuted } }, "Loading real-time attendance logs..."))) : filteredLogs.length === 0 ? (React.createElement("tr", null,
-                    React.createElement("td", { colSpan: 4, style: { padding: "40px 20px", textAlign: "center", color: themeTokens.textMuted } }, "No attendance records found."))) : (filteredLogs.map((log) => {
+                    React.createElement("td", { colSpan: 8, style: { padding: "40px 20px", textAlign: "center", color: themeTokens.textMuted } }, "Loading real-time attendance logs..."))) : filteredLogs.length === 0 ? (React.createElement("tr", null,
+                    React.createElement("td", { colSpan: 8, style: { padding: "40px 20px", textAlign: "center", color: themeTokens.textMuted } }, "No attendance records found."))) : (filteredLogs.map((log) => {
                     const isOut = (log.punch_type || "IN").toUpperCase() === "OUT";
                     const { date, time } = formatTimestamp(log.timestamp);
                     const rawConf = log.confidence ?? log.confidence_score;
                     const confPct = rawConf != null ? (rawConf * 100).toFixed(1) : "99.0";
+                    const durationText = formatDuration(log.duration_minutes, log.duration_hours);
                     return (React.createElement("tr", { key: log.id, style: {
                             borderBottom: `1px solid ${themeTokens.border}`,
                             transition: "background-color 0.1s ease",
                         }, onMouseEnter: (e) => (e.currentTarget.style.backgroundColor = themeTokens.rowHover), onMouseLeave: (e) => (e.currentTarget.style.backgroundColor = "transparent") },
-                        React.createElement("td", { style: { padding: "12px 20px" } },
+                        React.createElement("td", { style: { padding: "12px 16px", whiteSpace: "nowrap" } },
+                            React.createElement("div", { style: { fontWeight: 600, color: themeTokens.textPrimary } }, date)),
+                        React.createElement("td", { style: { padding: "12px 16px", whiteSpace: "nowrap" } },
+                            React.createElement("div", { style: { fontFamily: "monospace", fontVariantNumeric: "tabular-nums", color: themeTokens.textMuted } }, time)),
+                        React.createElement("td", { style: { padding: "12px 16px" } },
                             React.createElement("div", { style: { fontWeight: 600, fontSize: "0.88rem", color: themeTokens.textPrimary } }, log.employee_name || log.employee_id),
                             React.createElement("div", { style: { fontSize: "0.72rem", color: themeTokens.textMuted, fontFamily: "monospace", marginTop: "2px" } },
                                 log.employee_id,
@@ -186,10 +259,15 @@ export const AttendanceLogs = ({ apiKey, workspaceId, apiUrl = "https://api.sure
                                         backgroundColor: isOut ? "#f59e0b" : "#10b981",
                                     } }),
                                 isOut ? "CLOCK OUT" : "CLOCK IN")),
-                        React.createElement("td", { style: { padding: "12px 16px" } },
-                            React.createElement("div", { style: { fontFamily: "monospace", fontVariantNumeric: "tabular-nums" } }, time),
-                            React.createElement("div", { style: { fontSize: "0.72rem", color: themeTokens.textMuted } }, date)),
-                        React.createElement("td", { style: { padding: "12px 20px", textAlign: "right" } },
+                        React.createElement("td", { style: { padding: "12px 16px", whiteSpace: "nowrap" } },
+                            React.createElement("span", { style: {
+                                    fontFamily: "monospace",
+                                    fontVariantNumeric: "tabular-nums",
+                                    fontWeight: 600,
+                                    color: durationText !== "-" ? themeTokens.textPrimary : themeTokens.textMuted,
+                                } }, durationText)),
+                        React.createElement("td", { style: { padding: "12px 16px", whiteSpace: "nowrap" } }, renderShiftStatusBadge(log.shift_status)),
+                        React.createElement("td", { style: { padding: "12px 16px", whiteSpace: "nowrap" } },
                             React.createElement("span", { style: {
                                     fontFamily: "monospace",
                                     fontVariantNumeric: "tabular-nums",
@@ -197,6 +275,8 @@ export const AttendanceLogs = ({ apiKey, workspaceId, apiUrl = "https://api.sure
                                     color: Number(confPct) >= 80 ? "#10b981" : "#38bdf8",
                                 } },
                                 confPct,
-                                "%"))));
+                                "%")),
+                        React.createElement("td", { style: { padding: "12px 16px", textAlign: "right", whiteSpace: "nowrap" } },
+                            React.createElement("span", { style: { fontSize: "0.75rem", color: "#10b981", fontWeight: 600 } }, "\u2713 Verified"))));
                 })))))));
 };

@@ -33,12 +33,54 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
   const effectiveApiKey = apiKey || api_key || "";
   const effectiveWorkspaceId = workspaceId || workspace_id || "";
 
-  const [activeTab, setActiveTab] = useState<"kiosk" | "logs" | "employees" | "faces" | "analytics" | "settings">(initialTab);
+  type ManagerTab = "kiosk" | "logs" | "employees" | "faces" | "analytics" | "settings";
+  const validTabs: ManagerTab[] = ["kiosk", "logs", "employees", "faces", "analytics", "settings"];
+
+  const getInitialTab = (): ManagerTab => {
+    if (typeof window !== "undefined") {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const t = params.get("tab")?.toLowerCase();
+        if (t && validTabs.includes(t as ManagerTab)) {
+          return t as ManagerTab;
+        }
+      } catch (_) {}
+    }
+    return initialTab;
+  };
+
+  const [activeTab, setActiveTab] = useState<ManagerTab>(getInitialTab);
   const [refreshKey, setRefreshKey] = useState<number>(0);
   const [timezone, setTimezone] = useState<string>(propTimezone || DEFAULT_TIMEZONE);
   const [selectedEmpForFaces, setSelectedEmpForFaces] = useState<string>("");
   const [showEnrollModal, setShowEnrollModal] = useState<boolean>(false);
   const [enrollTargetEmpId, setEnrollTargetEmpId] = useState<string>("");
+
+  const handleTabChange = (tab: ManagerTab) => {
+    setActiveTab(tab);
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set("tab", tab);
+        window.history.replaceState({}, "", url.toString());
+      } catch (_) {}
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPopState = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const t = params.get("tab")?.toLowerCase();
+        if (t && validTabs.includes(t as ManagerTab)) {
+          setActiveTab(t as ManagerTab);
+        }
+      } catch (_) {}
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   useEffect(() => {
     if (propTimezone) {
@@ -72,7 +114,7 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
 
   const handleSelectEmployeeForFaces = (empId: string) => {
     setSelectedEmpForFaces(empId);
-    setActiveTab("faces");
+    handleTabChange("faces");
   };
 
   return (
@@ -150,7 +192,7 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
           {showKioskTab && (
             <button
               type="button"
-              onClick={() => setActiveTab("kiosk")}
+              onClick={() => handleTabChange("kiosk")}
               style={{
                 padding: "6px 14px",
                 borderRadius: "8px",
@@ -168,7 +210,7 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
           )}
           <button
             type="button"
-            onClick={() => setActiveTab("logs")}
+            onClick={() => handleTabChange("logs")}
             style={{
               padding: "6px 14px",
               borderRadius: "8px",
@@ -185,7 +227,7 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("employees")}
+            onClick={() => handleTabChange("employees")}
             style={{
               padding: "6px 14px",
               borderRadius: "8px",
@@ -202,7 +244,7 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("faces")}
+            onClick={() => handleTabChange("faces")}
             style={{
               padding: "6px 14px",
               borderRadius: "8px",
@@ -219,7 +261,7 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("analytics")}
+            onClick={() => handleTabChange("analytics")}
             style={{
               padding: "6px 14px",
               borderRadius: "8px",
@@ -237,7 +279,7 @@ export const SureClockManager: React.FC<SureClockManagerProps> = ({
           {showSettingsTab && (
             <button
               type="button"
-              onClick={() => setActiveTab("settings")}
+              onClick={() => handleTabChange("settings")}
               style={{
                 padding: "6px 14px",
                 borderRadius: "8px",

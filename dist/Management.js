@@ -12,12 +12,53 @@ import { fetchWorkspaceSettings } from "./api.js";
 export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, apiUrl = "https://api.sureclock.karalasoft.com", theme = "dark", timezone: propTimezone, styles = {}, className = "", initialTab = "kiosk", title = "SureClock Biometric Hub", showKioskTab = true, showSettingsTab = true, kioskProps = {}, onAttendance, onEnrollment, }) => {
     const effectiveApiKey = apiKey || api_key || "";
     const effectiveWorkspaceId = workspaceId || workspace_id || "";
-    const [activeTab, setActiveTab] = useState(initialTab);
+    const validTabs = ["kiosk", "logs", "employees", "faces", "analytics", "settings"];
+    const getInitialTab = () => {
+        if (typeof window !== "undefined") {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const t = params.get("tab")?.toLowerCase();
+                if (t && validTabs.includes(t)) {
+                    return t;
+                }
+            }
+            catch (_) { }
+        }
+        return initialTab;
+    };
+    const [activeTab, setActiveTab] = useState(getInitialTab);
     const [refreshKey, setRefreshKey] = useState(0);
     const [timezone, setTimezone] = useState(propTimezone || DEFAULT_TIMEZONE);
     const [selectedEmpForFaces, setSelectedEmpForFaces] = useState("");
     const [showEnrollModal, setShowEnrollModal] = useState(false);
     const [enrollTargetEmpId, setEnrollTargetEmpId] = useState("");
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        if (typeof window !== "undefined") {
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set("tab", tab);
+                window.history.replaceState({}, "", url.toString());
+            }
+            catch (_) { }
+        }
+    };
+    useEffect(() => {
+        if (typeof window === "undefined")
+            return;
+        const onPopState = () => {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const t = params.get("tab")?.toLowerCase();
+                if (t && validTabs.includes(t)) {
+                    setActiveTab(t);
+                }
+            }
+            catch (_) { }
+        };
+        window.addEventListener("popstate", onPopState);
+        return () => window.removeEventListener("popstate", onPopState);
+    }, []);
     useEffect(() => {
         if (propTimezone) {
             setTimezone(propTimezone);
@@ -48,7 +89,7 @@ export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, a
     };
     const handleSelectEmployeeForFaces = (empId) => {
         setSelectedEmpForFaces(empId);
-        setActiveTab("faces");
+        handleTabChange("faces");
     };
     return (React.createElement("div", { className: `sureclock-manager-root ${className}`, style: {
             maxWidth: "960px",
@@ -103,7 +144,7 @@ export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, a
                     flexWrap: "wrap",
                     gap: "2px",
                 } },
-                showKioskTab && (React.createElement("button", { type: "button", onClick: () => setActiveTab("kiosk"), style: {
+                showKioskTab && (React.createElement("button", { type: "button", onClick: () => handleTabChange("kiosk"), style: {
                         padding: "6px 14px",
                         borderRadius: "8px",
                         border: "none",
@@ -114,7 +155,7 @@ export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, a
                         cursor: "pointer",
                         transition: "all 0.2s ease",
                     } }, "\uD83D\uDCF8 Kiosk")),
-                React.createElement("button", { type: "button", onClick: () => setActiveTab("logs"), style: {
+                React.createElement("button", { type: "button", onClick: () => handleTabChange("logs"), style: {
                         padding: "6px 14px",
                         borderRadius: "8px",
                         border: "none",
@@ -125,7 +166,7 @@ export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, a
                         cursor: "pointer",
                         transition: "all 0.2s ease",
                     } }, "\uD83D\uDCCB Logs"),
-                React.createElement("button", { type: "button", onClick: () => setActiveTab("employees"), style: {
+                React.createElement("button", { type: "button", onClick: () => handleTabChange("employees"), style: {
                         padding: "6px 14px",
                         borderRadius: "8px",
                         border: "none",
@@ -136,7 +177,7 @@ export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, a
                         cursor: "pointer",
                         transition: "all 0.2s ease",
                     } }, "\uD83D\uDC65 Employees"),
-                React.createElement("button", { type: "button", onClick: () => setActiveTab("faces"), style: {
+                React.createElement("button", { type: "button", onClick: () => handleTabChange("faces"), style: {
                         padding: "6px 14px",
                         borderRadius: "8px",
                         border: "none",
@@ -147,7 +188,7 @@ export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, a
                         cursor: "pointer",
                         transition: "all 0.2s ease",
                     } }, "\uD83D\uDC64 Faces"),
-                React.createElement("button", { type: "button", onClick: () => setActiveTab("analytics"), style: {
+                React.createElement("button", { type: "button", onClick: () => handleTabChange("analytics"), style: {
                         padding: "6px 14px",
                         borderRadius: "8px",
                         border: "none",
@@ -158,7 +199,7 @@ export const SureClockManager = ({ apiKey, api_key, workspaceId, workspace_id, a
                         cursor: "pointer",
                         transition: "all 0.2s ease",
                     } }, "\uD83D\uDCCA Analytics"),
-                showSettingsTab && (React.createElement("button", { type: "button", onClick: () => setActiveTab("settings"), style: {
+                showSettingsTab && (React.createElement("button", { type: "button", onClick: () => handleTabChange("settings"), style: {
                         padding: "6px 14px",
                         borderRadius: "8px",
                         border: "none",

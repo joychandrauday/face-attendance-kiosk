@@ -2,7 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.7.3] - 2026-11-23
+## [1.7.4] - 2026-11-23
+### Added & Improved
+- **Enriched Attendance Logs (Date, Time, Working Hours, Shift Status)**:
+  - Added full Date and 12-Hour Time columns to both the dedicated Logs view (`AttendanceLogs.tsx`) and the Analytics audit table (`AnalyticsDashboard.tsx`).
+  - Added live Working Hours and visual Shift Status indicators (`● ON-DUTY`, `✓ COMPLETED`, `⚠️ AUTO-CLOSED`) linked directly to underlying work sessions.
+- **Timezone-Aware Analytics Queries**:
+  - Implemented `formatISODateInTimezone` using `Intl.DateTimeFormat` with workspace timezones, preventing UTC `.toISOString().split("T")[0]` from cutting off early morning dates (e.g. Nov 23 in Asia/Dhaka).
+  - Ensured today's day-wise work hours, live punches, and hourly traffic reflect current calendar dates in the workspace timezone.
+- **URL Query Tab Persistence (`?tab=...`)**:
+  - Synchronized `SureClockManager` tabs with browser URL query parameter `?tab=analytics`, `?tab=logs`, `?tab=kiosk`, etc.
+  - Page reloads now persist the active tab without resetting to default.
+  - Added `popstate` browser navigation support.
 ### Added & Improved
 - **Pure Auto-Verification (Zero Friction)**: Removed manual "Clock In" and "Clock Out" toggle buttons from the kiosk UI. Verification now operates in 100% smart AUTO mode with a single Verify action.
 - **Session-Driven Shift State Machine**:

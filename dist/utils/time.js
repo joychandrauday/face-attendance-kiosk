@@ -86,6 +86,23 @@ export function formatHourlyLabel(hourStr) {
     const hour12 = num === 0 ? 12 : num > 12 ? num - 12 : num;
     return `${hour12.toString().padStart(2, "0")}:00 ${period}`;
 }
+/**
+ * Format Date object into YYYY-MM-DD in the specified timezone (not UTC).
+ */
+export function formatISODateInTimezone(date = new Date(), timeZone = DEFAULT_TIMEZONE) {
+    const safeTz = isValidTimezone(timeZone) ? timeZone : DEFAULT_TIMEZONE;
+    try {
+        return new Intl.DateTimeFormat("en-CA", {
+            timeZone: safeTz,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+        }).format(date);
+    }
+    catch (_) {
+        return date.toISOString().split("T")[0];
+    }
+}
 function isValidTimezone(tz) {
     if (!tz)
         return false;

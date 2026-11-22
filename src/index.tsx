@@ -34,6 +34,7 @@ export {
   formatDate,
   format12HourDateTime,
   formatHourlyLabel,
+  formatISODateInTimezone,
 } from "./utils/time.js";
 export type { TimezoneOption } from "./utils/time.js";
 

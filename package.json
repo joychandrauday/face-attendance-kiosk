@@ -1,6 +1,6 @@
 {
   "name": "@karalasoft/face-attendance-kiosk",
-  "version": "1.7.3",
+  "version": "1.7.4",
   "type": "module",
   "description": "Enterprise React / Next.js Biometric Face Attendance, Multi-Angle Enrollment & Analytics SDK for SureClock",
   "main": "dist/index.js",

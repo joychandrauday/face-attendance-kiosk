@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchAttendanceLogs, fetchAttendanceStats, fetchEmployeeDailyHours, fetchEmployees, } from "./api.js";
-import { DEFAULT_TIMEZONE, format12HourTime, formatDate, formatHourlyLabel, } from "./utils/time.js";
+import { DEFAULT_TIMEZONE, format12HourTime, formatDate, formatHourlyLabel, formatISODateInTimezone, } from "./utils/time.js";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, } from "recharts";
 export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.sureclock.karalasoft.com", theme = "dark", timezone = DEFAULT_TIMEZONE, }) => {
     const [stats, setStats] = useState(null);
@@ -20,15 +20,80 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
     const textPrimary = isLight ? "#0f172a" : "#f8fafc";
     const textMuted = isLight ? "#64748b" : "#94a3b8";
     const accent = "#0ea5e9";
+    const formatDuration = (mins, hours) => {
+        if (mins != null && mins > 0) {
+            const h = Math.floor(mins / 60);
+            const m = mins % 60;
+            return `${h}h ${m}m`;
+        }
+        if (hours != null && hours > 0) {
+            const totalM = Math.round(hours * 60);
+            const h = Math.floor(totalM / 60);
+            const m = totalM % 60;
+            return `${h}h ${m}m`;
+        }
+        if (mins === 0)
+            return "0h 00m";
+        return "-";
+    };
+    const renderShiftStatusBadge = (status) => {
+        const st = (status || "").toUpperCase();
+        if (st === "OPEN") {
+            return (React.createElement("span", { style: {
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    padding: "2px 7px",
+                    borderRadius: "10px",
+                    backgroundColor: "rgba(14, 165, 233, 0.15)",
+                    color: "#38bdf8",
+                    border: "1px solid rgba(14, 165, 233, 0.3)",
+                } },
+                React.createElement("span", { style: { width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#38bdf8" } }),
+                "ON-DUTY"));
+        }
+        if (st === "COMPLETED") {
+            return (React.createElement("span", { style: {
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    padding: "2px 7px",
+                    borderRadius: "10px",
+                    backgroundColor: "rgba(16, 185, 129, 0.15)",
+                    color: "#10b981",
+                    border: "1px solid rgba(16, 185, 129, 0.3)",
+                } }, "\u2713 COMPLETED"));
+        }
+        if (st === "AUTO_CLOSED") {
+            return (React.createElement("span", { style: {
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    padding: "2px 7px",
+                    borderRadius: "10px",
+                    backgroundColor: "rgba(245, 158, 11, 0.15)",
+                    color: "#f59e0b",
+                    border: "1px solid rgba(245, 158, 11, 0.3)",
+                } }, "\u26A0\uFE0F AUTO-CLOSED"));
+        }
+        return React.createElement("span", { style: { color: textMuted } }, "-");
+    };
     const loadBaseData = async () => {
         if (!apiKey || !workspaceId)
             return;
         setLoading(true);
         setError(null);
         try {
+            const todayDateStr = formatISODateInTimezone(new Date(), timezone);
             const [statsData, logsData, empData] = await Promise.all([
-                fetchAttendanceStats(apiKey, workspaceId, undefined, apiUrl).catch(() => null),
-                fetchAttendanceLogs(apiKey, workspaceId, 25, apiUrl).catch(() => []),
+                fetchAttendanceStats(apiKey, workspaceId, todayDateStr, apiUrl).catch(() => null),
+                fetchAttendanceLogs(apiKey, workspaceId, 50, apiUrl).catch(() => []),
                 fetchEmployees(apiKey, workspaceId, apiUrl).catch(() => []),
             ]);
             setStats(statsData);
@@ -50,8 +115,8 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
             const today = new Date();
             const past = new Date();
             past.setDate(today.getDate() - daysRange);
-            const startDateStr = past.toISOString().split("T")[0];
-            const endDateStr = today.toISOString().split("T")[0];
+            const startDateStr = formatISODateInTimezone(past, timezone);
+            const endDateStr = formatISODateInTimezone(today, timezone);
             const empFilter = selectedEmpId === "ALL" ? undefined : selectedEmpId;
             const data = await fetchEmployeeDailyHours(apiKey, workspaceId, empFilter, startDateStr, endDateStr, apiUrl);
             setDailyHours(data || []);
@@ -65,10 +130,10 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
     };
     useEffect(() => {
         loadBaseData();
-    }, [apiKey, workspaceId, apiUrl]);
+    }, [apiKey, workspaceId, apiUrl, timezone]);
     useEffect(() => {
         loadDailyHours();
-    }, [apiKey, workspaceId, apiUrl, selectedEmpId, daysRange]);
+    }, [apiKey, workspaceId, apiUrl, selectedEmpId, daysRange, timezone]);
     // Transform hourly breakdown into chart-ready data in 12-hour format
     const hourlyChartData = useMemo(() => {
         if (!stats?.hourly_breakdown) {
@@ -391,17 +456,23 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
                 React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.82rem" } },
                     React.createElement("thead", null,
                         React.createElement("tr", { style: { borderBottom: `1px solid ${border}`, color: textMuted } },
+                            React.createElement("th", { style: { padding: "10px 12px" } }, "Date"),
                             React.createElement("th", { style: { padding: "10px 12px" } }, "Time (12h)"),
                             React.createElement("th", { style: { padding: "10px 12px" } }, "Employee"),
                             React.createElement("th", { style: { padding: "10px 12px" } }, "Direction"),
+                            React.createElement("th", { style: { padding: "10px 12px" } }, "Working Hours"),
+                            React.createElement("th", { style: { padding: "10px 12px" } }, "Shift Status"),
                             React.createElement("th", { style: { padding: "10px 12px" } }, "Confidence"),
-                            React.createElement("th", { style: { padding: "10px 12px" } }, "Status"))),
+                            React.createElement("th", { style: { padding: "10px 12px", textAlign: "right" } }, "Status"))),
                     React.createElement("tbody", null, loading ? (React.createElement("tr", null,
-                        React.createElement("td", { colSpan: 5, style: { padding: "24px", textAlign: "center", color: textMuted } }, "Loading attendance audit logs..."))) : logs.length === 0 ? (React.createElement("tr", null,
-                        React.createElement("td", { colSpan: 5, style: { padding: "24px", textAlign: "center", color: textMuted } }, "No recent verification logs recorded yet."))) : (logs.slice(0, 10).map((log, i) => {
+                        React.createElement("td", { colSpan: 8, style: { padding: "24px", textAlign: "center", color: textMuted } }, "Loading attendance audit logs..."))) : logs.length === 0 ? (React.createElement("tr", null,
+                        React.createElement("td", { colSpan: 8, style: { padding: "24px", textAlign: "center", color: textMuted } }, "No recent verification logs recorded yet."))) : (logs.slice(0, 15).map((log, i) => {
                         const isOut = log.punch_type === "OUT";
+                        const dateStr = formatDate(log.timestamp, timezone);
+                        const durationText = formatDuration(log.duration_minutes, log.duration_hours);
                         return (React.createElement("tr", { key: log.id || i, style: { borderBottom: `1px solid ${border}` } },
-                            React.createElement("td", { style: { padding: "10px 12px", fontFamily: "monospace", color: textMuted } }, format12HourTime(log.timestamp, timezone, true)),
+                            React.createElement("td", { style: { padding: "10px 12px", whiteSpace: "nowrap", fontWeight: 600 } }, dateStr),
+                            React.createElement("td", { style: { padding: "10px 12px", fontFamily: "monospace", color: textMuted, whiteSpace: "nowrap" } }, format12HourTime(log.timestamp, timezone, true)),
                             React.createElement("td", { style: { padding: "10px 12px" } },
                                 React.createElement("div", { style: { fontWeight: 600 } }, log.employee_name || log.employee_id),
                                 log.employee_name && (React.createElement("div", { style: { fontSize: "0.7rem", color: textMuted, fontFamily: "monospace" } }, log.employee_id))),
@@ -414,7 +485,10 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
                                         backgroundColor: isOut ? "rgba(245, 158, 11, 0.15)" : "rgba(16, 185, 129, 0.15)",
                                         color: isOut ? "#f59e0b" : "#10b981",
                                     } }, log.punch_type || "PUNCH")),
-                            React.createElement("td", { style: { padding: "10px 12px", fontFamily: "monospace" } }, (() => {
+                            React.createElement("td", { style: { padding: "10px 12px", fontFamily: "monospace", whiteSpace: "nowrap" } },
+                                React.createElement("span", { style: { fontWeight: 600, color: durationText !== "-" ? textPrimary : textMuted } }, durationText)),
+                            React.createElement("td", { style: { padding: "10px 12px", whiteSpace: "nowrap" } }, renderShiftStatusBadge(log.shift_status)),
+                            React.createElement("td", { style: { padding: "10px 12px", fontFamily: "monospace", whiteSpace: "nowrap" } }, (() => {
                                 const confVal = log.confidence ?? log.confidence_score;
                                 if (confVal == null)
                                     return React.createElement("span", { style: { color: textMuted } }, "-");
@@ -437,6 +511,6 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
                                     pct,
                                     "%"));
                             })()),
-                            React.createElement("td", { style: { padding: "10px 12px", color: "#10b981" } }, "\u2713 Verified")));
+                            React.createElement("td", { style: { padding: "10px 12px", color: "#10b981", textAlign: "right", whiteSpace: "nowrap" } }, "\u2713 Verified")));
                     }))))))));
 };
