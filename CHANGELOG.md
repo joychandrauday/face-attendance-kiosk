@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.3] - 2026-11-23
+### Added & Improved
+- **Pure Auto-Verification (Zero Friction)**: Removed manual "Clock In" and "Clock Out" toggle buttons from the kiosk UI. Verification now operates in 100% smart AUTO mode with a single Verify action.
+- **Session-Driven Shift State Machine**:
+  - First scan automatically logs Clock In with audio chime and instant checkmark.
+  - Second scan detects active shift and presents a guarded 10-second countdown Clock-Out confirmation modal with HMAC security token verification.
+- **Enhanced Analytics Breakdown**:
+  - Added dedicated Biometric Confidence column to the day-wise breakdown table with color-coded confidence percentage badges.
+  - Formatted Working Hours to human-readable hours and minutes (e.g. `8h 15m (8.25 hrs)`).
+  - Enhanced Shift Status display with distinct visual badges: `● ON-DUTY / IN PROGRESS`, `✓ COMPLETED`, `⚠️ AUTO-CLOSED`.
+  - Fixed confidence score display in recent attendance audit logs (`confidence` and `confidence_score` reconciliation).
+
 ## [1.7.1] - 2026-11-22
 ### Added & Improved
 - **Signed Clock-Out Security**: Added HMAC-SHA256 `clock_out_token` handling during clock-out confirmation dispatch.
