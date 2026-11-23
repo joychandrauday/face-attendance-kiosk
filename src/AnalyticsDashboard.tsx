@@ -157,8 +157,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         fetchEmployees(apiKey, workspaceId, apiUrl).catch(() => []),
       ]);
       setStats(statsData);
-      setLogs(logsData || []);
-      setEmployees(empData || []);
+      setLogs(Array.isArray(logsData) ? logsData : (Array.isArray((logsData as any)?.logs) ? (logsData as any).logs : []));
+      setEmployees(Array.isArray(empData) ? empData : (Array.isArray((empData as any)?.employees) ? (empData as any).employees : []));
     } catch (err: any) {
       setError(err.message || "Failed to load analytics data");
     } finally {
@@ -185,7 +185,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         endDateStr,
         apiUrl
       );
-      setDailyHours(data || []);
+      setDailyHours(Array.isArray(data) ? data : (Array.isArray((data as any)?.items) ? (data as any).items : []));
     } catch (err: any) {
       console.error("Failed to load daily hours:", err);
     } finally {
@@ -231,7 +231,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     const dateMap = new Map<string, number>();
 
     // Sort chronologically ascending for the chart
-    const sorted = [...dailyHours].sort((a, b) => a.date.localeCompare(b.date));
+    const list = Array.isArray(dailyHours) ? dailyHours : [];
+    const sorted = [...list].sort((a, b) => a.date.localeCompare(b.date));
     for (const item of sorted) {
       const cur = dateMap.get(item.date) || 0;
       dateMap.set(item.date, Math.round((cur + item.total_hours) * 100) / 100);
@@ -370,8 +371,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 cursor: "pointer",
               }}
             >
-              <option value="ALL">👥 All Employees ({employees.length})</option>
-              {employees.map((emp) => {
+              <option value="ALL">👥 All Employees ({Array.isArray(employees) ? employees.length : 0})</option>
+              {(Array.isArray(employees) ? employees : []).map((emp) => {
                 const displayName = emp.name ? `${emp.name} (${emp.employee_id})` : emp.employee_id;
                 return (
                   <option key={emp.employee_id} value={emp.employee_id}>
@@ -471,14 +472,14 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     Loading employee work hours breakdown...
                   </td>
                 </tr>
-              ) : dailyHours.length === 0 ? (
+              ) : (Array.isArray(dailyHours) ? dailyHours : []).length === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ padding: "24px", textAlign: "center", color: textMuted }}>
                     No work session records found for the selected {daysRange}-day period.
                   </td>
                 </tr>
               ) : (
-                dailyHours.map((row, i) => {
+                (Array.isArray(dailyHours) ? dailyHours : []).map((row, i) => {
                   const empDisplay = row.employee_name || row.employee_id;
                   const isFullDay = row.total_hours >= 8.0;
                   const isOnDuty = row.has_open_session || row.shift_status === "OPEN";
@@ -747,14 +748,14 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     Loading attendance audit logs...
                   </td>
                 </tr>
-              ) : logs.length === 0 ? (
+              ) : (Array.isArray(logs) ? logs : []).length === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ padding: "24px", textAlign: "center", color: textMuted }}>
                     No recent verification logs recorded yet.
                   </td>
                 </tr>
               ) : (
-                logs.slice(0, 15).map((log, i) => {
+                (Array.isArray(logs) ? logs : []).slice(0, 15).map((log, i) => {
                   const isOut = log.punch_type === "OUT";
                   const dateStr = formatDate(log.timestamp, timezone);
                   const durationText = formatDuration(log.duration_minutes, log.duration_hours);

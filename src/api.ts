@@ -103,7 +103,26 @@ export async function fetchEmployees(
 ): Promise<EnrolledEmployee[]> {
   const base = apiUrl.replace(/\/$/, "");
   const endpoint = `${base}/api/v1/employees?workspace_id=${encodeURIComponent(workspaceId)}`;
-  return await apiRequest<EnrolledEmployee[]>(endpoint, apiKey, { method: "GET" });
+  const data = await apiRequest<any>(endpoint, apiKey, { method: "GET" });
+  const rawList: any[] = Array.isArray(data) ? data : (Array.isArray(data?.employees) ? data.employees : []);
+  return rawList.map((emp: any) => ({
+    employee_id: emp.employee_id || emp.employee_code || emp.id || "",
+    name: emp.name || emp.full_name || emp.employee_id || "",
+    workspace_id: emp.workspace_id || workspaceId,
+    enrolled_at: emp.enrolled_at || emp.created_at,
+    image_url: emp.image_url || emp.image_front || null,
+    angles: emp.angles || [
+      emp.image_front ? "front" : null,
+      emp.image_left ? "left" : null,
+      emp.image_right ? "right" : null,
+    ].filter(Boolean),
+    angle_images: emp.angle_images || [
+      emp.image_front ? { angle: "front", image_url: emp.image_front } : null,
+      emp.image_left ? { angle: "left", image_url: emp.image_left } : null,
+      emp.image_right ? { angle: "right", image_url: emp.image_right } : null,
+    ].filter(Boolean),
+    ...emp,
+  }));
 }
 
 /** Delete an employee and their biometric face vectors */
@@ -154,7 +173,8 @@ export async function fetchAttendanceLogs(
 ): Promise<AttendanceLogRecord[]> {
   const base = apiUrl.replace(/\/$/, "");
   const endpoint = `${base}/api/v1/attendance/logs?workspace_id=${encodeURIComponent(workspaceId)}&limit=${limit}`;
-  return await apiRequest<AttendanceLogRecord[]>(endpoint, apiKey, { method: "GET" });
+  const data = await apiRequest<any>(endpoint, apiKey, { method: "GET" });
+  return Array.isArray(data) ? data : (Array.isArray(data?.logs) ? data.logs : []);
 }
 
 export interface WorkspaceSettings {
@@ -196,7 +216,8 @@ export async function fetchEmployeeDailyHours(
   if (startDate) params.append("start_date", startDate);
   if (endDate) params.append("end_date", endDate);
   const endpoint = `${base}/api/v1/attendance/employee-daily-hours?${params.toString()}`;
-  return await apiRequest<EmployeeDailyHoursRecord[]>(endpoint, apiKey, { method: "GET" });
+  const data = await apiRequest<any>(endpoint, apiKey, { method: "GET" });
+  return Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
 }
 
 /** Fetch workspace settings and similarity threshold */

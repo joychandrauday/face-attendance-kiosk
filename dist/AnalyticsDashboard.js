@@ -97,8 +97,8 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
                 fetchEmployees(apiKey, workspaceId, apiUrl).catch(() => []),
             ]);
             setStats(statsData);
-            setLogs(logsData || []);
-            setEmployees(empData || []);
+            setLogs(Array.isArray(logsData) ? logsData : (Array.isArray(logsData?.logs) ? logsData.logs : []));
+            setEmployees(Array.isArray(empData) ? empData : (Array.isArray(empData?.employees) ? empData.employees : []));
         }
         catch (err) {
             setError(err.message || "Failed to load analytics data");
@@ -119,7 +119,7 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
             const endDateStr = formatISODateInTimezone(today, timezone);
             const empFilter = selectedEmpId === "ALL" ? undefined : selectedEmpId;
             const data = await fetchEmployeeDailyHours(apiKey, workspaceId, empFilter, startDateStr, endDateStr, apiUrl);
-            setDailyHours(data || []);
+            setDailyHours(Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []));
         }
         catch (err) {
             console.error("Failed to load daily hours:", err);
@@ -161,7 +161,8 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
         // If ALL selected, show total hours worked by all staff per day
         const dateMap = new Map();
         // Sort chronologically ascending for the chart
-        const sorted = [...dailyHours].sort((a, b) => a.date.localeCompare(b.date));
+        const list = Array.isArray(dailyHours) ? dailyHours : [];
+        const sorted = [...list].sort((a, b) => a.date.localeCompare(b.date));
         for (const item of sorted) {
             const cur = dateMap.get(item.date) || 0;
             dateMap.set(item.date, Math.round((cur + item.total_hours) * 100) / 100);
@@ -239,9 +240,9 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
                         } },
                         React.createElement("option", { value: "ALL" },
                             "\uD83D\uDC65 All Employees (",
-                            employees.length,
+                            Array.isArray(employees) ? employees.length : 0,
                             ")"),
-                        employees.map((emp) => {
+                        (Array.isArray(employees) ? employees : []).map((emp) => {
                             const displayName = emp.name ? `${emp.name} (${emp.employee_id})` : emp.employee_id;
                             return (React.createElement("option", { key: emp.employee_id, value: emp.employee_id }, displayName));
                         })),
@@ -294,11 +295,11 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
                             React.createElement("th", { style: { padding: "10px 12px" } }, "Confidence"),
                             React.createElement("th", { style: { padding: "10px 12px" } }, "Shift Status"))),
                     React.createElement("tbody", null, dailyLoading ? (React.createElement("tr", null,
-                        React.createElement("td", { colSpan: 8, style: { padding: "24px", textAlign: "center", color: textMuted } }, "Loading employee work hours breakdown..."))) : dailyHours.length === 0 ? (React.createElement("tr", null,
+                        React.createElement("td", { colSpan: 8, style: { padding: "24px", textAlign: "center", color: textMuted } }, "Loading employee work hours breakdown..."))) : (Array.isArray(dailyHours) ? dailyHours : []).length === 0 ? (React.createElement("tr", null,
                         React.createElement("td", { colSpan: 8, style: { padding: "24px", textAlign: "center", color: textMuted } },
                             "No work session records found for the selected ",
                             daysRange,
-                            "-day period."))) : (dailyHours.map((row, i) => {
+                            "-day period."))) : ((Array.isArray(dailyHours) ? dailyHours : []).map((row, i) => {
                         const empDisplay = row.employee_name || row.employee_id;
                         const isFullDay = row.total_hours >= 8.0;
                         const isOnDuty = row.has_open_session || row.shift_status === "OPEN";
@@ -465,8 +466,8 @@ export const AnalyticsDashboard = ({ apiKey, workspaceId, apiUrl = "https://api.
                             React.createElement("th", { style: { padding: "10px 12px" } }, "Confidence"),
                             React.createElement("th", { style: { padding: "10px 12px", textAlign: "right" } }, "Status"))),
                     React.createElement("tbody", null, loading ? (React.createElement("tr", null,
-                        React.createElement("td", { colSpan: 8, style: { padding: "24px", textAlign: "center", color: textMuted } }, "Loading attendance audit logs..."))) : logs.length === 0 ? (React.createElement("tr", null,
-                        React.createElement("td", { colSpan: 8, style: { padding: "24px", textAlign: "center", color: textMuted } }, "No recent verification logs recorded yet."))) : (logs.slice(0, 15).map((log, i) => {
+                        React.createElement("td", { colSpan: 8, style: { padding: "24px", textAlign: "center", color: textMuted } }, "Loading attendance audit logs..."))) : (Array.isArray(logs) ? logs : []).length === 0 ? (React.createElement("tr", null,
+                        React.createElement("td", { colSpan: 8, style: { padding: "24px", textAlign: "center", color: textMuted } }, "No recent verification logs recorded yet."))) : ((Array.isArray(logs) ? logs : []).slice(0, 15).map((log, i) => {
                         const isOut = log.punch_type === "OUT";
                         const dateStr = formatDate(log.timestamp, timezone);
                         const durationText = formatDuration(log.duration_minutes, log.duration_hours);

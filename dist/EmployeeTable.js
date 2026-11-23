@@ -22,7 +22,7 @@ export const EmployeeTable = ({ apiKey, workspaceId, apiUrl = "https://api.surec
         setError(null);
         try {
             const data = await fetchEmployees(apiKey, workspaceId, apiUrl);
-            setEmployees(data || []);
+            setEmployees(Array.isArray(data) ? data : (Array.isArray(data?.employees) ? data.employees : []));
         }
         catch (err) {
             setError(err.message || "Failed to load employees");

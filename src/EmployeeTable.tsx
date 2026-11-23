@@ -43,7 +43,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
     setError(null);
     try {
       const data = await fetchEmployees(apiKey, workspaceId, apiUrl);
-      setEmployees(data || []);
+      setEmployees(Array.isArray(data) ? data : (Array.isArray((data as any)?.employees) ? (data as any).employees : []));
     } catch (err: any) {
       setError(err.message || "Failed to load employees");
     } finally {

@@ -30,7 +30,26 @@ async function apiRequest(endpoint, apiKey, options = {}) {
 export async function fetchEmployees(apiKey, workspaceId, apiUrl = "https://api.sureclock.karalasoft.com") {
     const base = apiUrl.replace(/\/$/, "");
     const endpoint = `${base}/api/v1/employees?workspace_id=${encodeURIComponent(workspaceId)}`;
-    return await apiRequest(endpoint, apiKey, { method: "GET" });
+    const data = await apiRequest(endpoint, apiKey, { method: "GET" });
+    const rawList = Array.isArray(data) ? data : (Array.isArray(data?.employees) ? data.employees : []);
+    return rawList.map((emp) => ({
+        employee_id: emp.employee_id || emp.employee_code || emp.id || "",
+        name: emp.name || emp.full_name || emp.employee_id || "",
+        workspace_id: emp.workspace_id || workspaceId,
+        enrolled_at: emp.enrolled_at || emp.created_at,
+        image_url: emp.image_url || emp.image_front || null,
+        angles: emp.angles || [
+            emp.image_front ? "front" : null,
+            emp.image_left ? "left" : null,
+            emp.image_right ? "right" : null,
+        ].filter(Boolean),
+        angle_images: emp.angle_images || [
+            emp.image_front ? { angle: "front", image_url: emp.image_front } : null,
+            emp.image_left ? { angle: "left", image_url: emp.image_left } : null,
+            emp.image_right ? { angle: "right", image_url: emp.image_right } : null,
+        ].filter(Boolean),
+        ...emp,
+    }));
 }
 /** Delete an employee and their biometric face vectors */
 export async function deleteEmployee(apiKey, workspaceId, employeeId, apiUrl = "https://api.sureclock.karalasoft.com") {
@@ -58,7 +77,8 @@ export async function fetchAttendanceStats(apiKey, workspaceId, date, apiUrl = "
 export async function fetchAttendanceLogs(apiKey, workspaceId, limit = 50, apiUrl = "https://api.sureclock.karalasoft.com") {
     const base = apiUrl.replace(/\/$/, "");
     const endpoint = `${base}/api/v1/attendance/logs?workspace_id=${encodeURIComponent(workspaceId)}&limit=${limit}`;
-    return await apiRequest(endpoint, apiKey, { method: "GET" });
+    const data = await apiRequest(endpoint, apiKey, { method: "GET" });
+    return Array.isArray(data) ? data : (Array.isArray(data?.logs) ? data.logs : []);
 }
 /** Fetch aggregated day-wise total work hours of employees */
 export async function fetchEmployeeDailyHours(apiKey, workspaceId, employeeId, startDate, endDate, apiUrl = "https://api.sureclock.karalasoft.com") {
@@ -71,7 +91,8 @@ export async function fetchEmployeeDailyHours(apiKey, workspaceId, employeeId, s
     if (endDate)
         params.append("end_date", endDate);
     const endpoint = `${base}/api/v1/attendance/employee-daily-hours?${params.toString()}`;
-    return await apiRequest(endpoint, apiKey, { method: "GET" });
+    const data = await apiRequest(endpoint, apiKey, { method: "GET" });
+    return Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
 }
 /** Fetch workspace settings and similarity threshold */
 export async function fetchWorkspaceSettings(apiKey, workspaceId, apiUrl = "https://api.sureclock.karalasoft.com") {

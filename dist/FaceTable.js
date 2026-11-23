@@ -22,9 +22,10 @@ export const FaceTable = ({ apiKey, workspaceId, selectedEmployeeId, apiUrl = "h
             setLoading(true);
             try {
                 const data = await fetchEmployees(apiKey, workspaceId, apiUrl);
-                setEmployees(data || []);
-                if (!activeEmpId && data && data.length > 0) {
-                    setActiveEmpId(data[0].employee_id);
+                const list = Array.isArray(data) ? data : (Array.isArray(data?.employees) ? data.employees : []);
+                setEmployees(list);
+                if (!activeEmpId && list && list.length > 0) {
+                    setActiveEmpId(list[0].employee_id);
                 }
             }
             catch (_) {
